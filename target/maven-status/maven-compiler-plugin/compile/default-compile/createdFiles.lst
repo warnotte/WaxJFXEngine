@@ -1,5 +1,5 @@
 org\openjfx\hellofx\Flotteur.class
+org\openjfx\hellofx\TEST.class
 org\openjfx\hellofx\VisualisationMoteurAvecGroup.class
-org\openjfx\hellofx\VisualisationMoteurAvecCamera$Flotteur.class
+org\openjfx\hellofx\TEST$Flotteur.class
 org\openjfx\hellofx\VisualisationMoteurAvecGroup$Flotteur.class
-org\openjfx\hellofx\VisualisationMoteurAvecCamera.class

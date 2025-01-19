@@ -34,7 +34,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
-                    <mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+                    <mainClass>org.openjfx.hellofx.TEST</mainClass>
                 </configuration>
                 
                 
@@ -42,13 +42,13 @@
                 <execution>
                     <id>run</id>
                     <configuration>
-                        <mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+                        <mainClass>org.openjfx.hellofx.TEST</mainClass>
                     </configuration>
                 </execution>
                 <execution>
                     <id>debug</id>
                     <configuration>
-                        <mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+                        <mainClass>org.openjfx.hellofx.TEST</mainClass>
                         <options>
                             <option>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8000</option>
                         </options>

@@ -56,6 +56,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
         Group groupeRectangle = new Group();
         groupeRectangle.setTranslateX(300);
+        groupeRectangle.setRotate(45);
      		
         // TODO : La solution est dans la boucle en dessous ... faut décomposer...
         
@@ -158,7 +159,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         
         // Mise à jour des coordonnées de la souris
         scene.setOnMouseMoved(event -> updateMouseCoords(event, drawingLayer, mouseCoordsLabel));
-     
+     /*
         // Gestion du zoom centré sur la souris
         scene.setOnScroll(event -> {
             double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
@@ -178,6 +179,49 @@ public class VisualisationMoteurAvecGroup extends Application {
             drawingLayer.setTranslateX(drawingLayer.getTranslateX() - f * dx);
             drawingLayer.setTranslateY(drawingLayer.getTranslateY() - f * dy);
         });
+        */
+ /*      
+        scene.setOnScroll(event -> {
+            double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
+
+            // Position de la souris dans la scène
+            double mouseSceneX = event.getSceneX();
+            double mouseSceneY = event.getSceneY();
+
+            // Calculer les coordonnées locales avant le zoom
+            Point2D mouseLocalBeforeZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+            // Appliquer le zoom
+            zoomFactor *= zoomDelta;
+            drawingLayer.setScaleX(zoomFactor);
+            drawingLayer.setScaleY(zoomFactor);
+
+            // Recalculer les coordonnées locales après le zoom
+            Point2D mouseLocalAfterZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+            // Calculer la différence entre les deux positions locales
+            Point2D adjustment = mouseLocalAfterZoom.subtract(mouseLocalBeforeZoom);
+
+            // Ajuster les translations pour compenser
+            drawingLayer.setTranslateX(drawingLayer.getTranslateX() - adjustment.getX());
+            drawingLayer.setTranslateY(drawingLayer.getTranslateY() - adjustment.getY());
+        });
+*/
+
+        scene.setOnScroll(event -> {
+            double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
+            
+            // Appliquer le zoom
+            zoomFactor *= zoomDelta;
+            drawingLayer.setScaleX(zoomFactor);
+            drawingLayer.setScaleY(zoomFactor);
+
+            // Log des propriétés
+            System.out.println("Zoom Factor: " + zoomFactor);
+            System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
+            System.out.println("ScaleX: " + drawingLayer.getScaleX() + ", ScaleY: " + drawingLayer.getScaleY());
+        });
+        
    
 
         // Gestion de la translation

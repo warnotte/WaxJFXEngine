@@ -1,7 +1,9 @@
 package org.openjfx.hellofx;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import javafx.application.Application;
@@ -54,17 +56,24 @@ public class VisualisationMoteurAvecGroup extends Application {
         // Style du fond
         root.setStyle("-fx-background-color: lightgray;");
 
+        Rectangle rect1 = new Rectangle(50, 50, 60, 40);
+		rect1.setFill(Color.BLUE);
+		rect1.setStroke(Color.BLACK);
+		rect1.getStyleClass().add("rectangle"); 
+		rect1.setStyle(":hover {"
+				+ "    -fx-background-color: #383838;"
+				+ "    -fx-scale-y: 1.1;"
+				+ "}");
+		root.getChildren().add(rect1);
+        
+        
         Group groupeRectangle = new Group();
         groupeRectangle.setTranslateX(300);
         groupeRectangle.setRotate(45);
-     		
-        // TODO : La solution est dans la boucle en dessous ... faut décomposer...
-        
+     	
      	// Ajouter des rectangles dans l'espace monde
         for (int i = 0; i < 8; i++) {
-        
-
-        for (int j = 0; j < 8; j++) {
+           for (int j = 0; j < 8; j++) {
         		Group flotteurAll = new Group();
         		
         		flotteurAll.setTranslateX(j*70);
@@ -73,37 +82,40 @@ public class VisualisationMoteurAvecGroup extends Application {
     			
         		
     			Flotteur flotteur = new Flotteur("Flotteur " + j);
-//    			Rectangle rect = new Rectangle(50 + i * 70, 50 + j * 30, 60, 40);
     			Rectangle rect = new Rectangle(-30, -20, 60, 40);
     			rect.setFill(Color.BLUE);
     			rect.setStroke(Color.BLACK);
-    			rect.getStyleClass().add("rectangle"); 
+    			//rect.getStyleClass().add("rectangle"); 
+    			/*rect.setStyle(":hover {"
+    					+ "    -fx-background-color: #383838;"
+    					+ "    -fx-scale-y: 1.1;"
+    					+ "}");*/
+    			
     			
     			flotteurAll.getChildren().add(rect);
     			
-    			Group arrow = createArrow(drawingLayer, -30, -22, 30, -22, 3, "L");
-    			flotteurAll.getChildren().add(arrow);
+    	//		Group arrow = createArrow(drawingLayer, -30, -22, 30, -22, 3, "L");
+    	//		flotteurAll.getChildren().add(arrow);
     		    
     			groupeRectangle.getChildren().add(flotteurAll);
+    			
+    			// Texte en espace ecran
+    	//		addLabelToShape("D1_"+i+""+j, rect, overlayGroup, drawingLayer, -30, -20);
+    	//	    addLabelToShape("D2_"+i+""+j, rect, overlayGroup, drawingLayer, 0, 0);
+    	//	    addLabelToShape("D3_"+i+""+j, rect, overlayGroup, drawingLayer, 30, 20);
     		    
-    		    // Ajouter un label à une position relative (au milieu de l'axe X et à 50% de la hauteur)
-    		   // addLabelToRectangle(rect, overlayGroup, drawingLayer, 0., 0.);
-    		   // addLabelToRectangle(rect, overlayGroup, drawingLayer, 0.5, 0.5);
-    		   //ddLabelToRectangle(rect, overlayGroup, drawingLayer, 1.0, 1.0);
-
+    		    // Texte dans l'espace monde
+    		    Text label = new Text(0,5, "XX");
+    		    flotteurAll.getChildren().add(label);
     		    
-    			/*addLabelToShape(rect, overlayGroup, drawingLayer, 0.0, 0.0);
-    		    addLabelToShape(rect, overlayGroup, drawingLayer, 0.5, 0.5);
-    		    addLabelToShape(rect, overlayGroup, drawingLayer, 1.0, 1.0);*/
-    			addLabelToShape("D1_"+i+""+j, rect, overlayGroup, drawingLayer, -30, -20);
-    		    addLabelToShape("D2_"+i+""+j, rect, overlayGroup, drawingLayer, 0, 0);
-    		    addLabelToShape("D3_"+i+""+j, rect, overlayGroup, drawingLayer, 30, 20);
-    		    
+    		    flotteurAll.getStyleClass().add("rectangle");
     		    
     			rectangleToFlotteurMap.put(rect, flotteur);
     		}
         }
         
+        /*
+        // TODO : Ce code est foireux, celui du dessus me semble bien.
 		// Ajouter différentes formes avec des labels
 		Shape[] shapes = new Shape[] {
 				new Rectangle(50, 50+100, 100, 50),                // Rectangle
@@ -133,14 +145,18 @@ public class VisualisationMoteurAvecGroup extends Application {
 		    // Ajouter le groupe au monde
 		    drawingGroup.getChildren().add(group);
 		}
-		
+		*/
 
 		// groupeRectangle.setRotate(45);
 		drawingGroup.getChildren().add(groupeRectangle);           
 
         // Label pour afficher les coordonnées de la souris
         Label mouseCoordsLabel = new Label("Coordonnées : (x, y)");
-        mouseCoordsLabel.setStyle("-fx-font-size: 14px; -fx-background-color: rgba(255, 255, 255, 0.8); -fx-padding: 5px;");
+        mouseCoordsLabel.setStyle("-fx-font-size: 14px;"
+        		+ " -fx-background-color: rgba(255, 255, 255, 0.8); "
+        		+ "-fx-padding: 5px; "
+        		+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 0, 5);"
+        		);
         mouseCoordsLabel.setLayoutX(10);
         mouseCoordsLabel.setLayoutY(10);
 
@@ -149,65 +165,18 @@ public class VisualisationMoteurAvecGroup extends Application {
 
         Scene scene = new Scene(root, 800, 600);
 
-        /*
+        
         System.err.println(" >> " + getClass().getResource("/test.css"));
      // load and apply CSS. 
         Optional.ofNullable(getClass().getResource("/test.css")) 
                 .map(URL::toExternalForm) 
                 .ifPresent(scene.getStylesheets()::add); 
-        */
+        
         
         // Mise à jour des coordonnées de la souris
         scene.setOnMouseMoved(event -> updateMouseCoords(event, drawingLayer, mouseCoordsLabel));
-     /*
-        // Gestion du zoom centré sur la souris
-        scene.setOnScroll(event -> {
-            double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
-
-            double mouseX = event.getSceneX();
-            double mouseY = event.getSceneY();
-
-            double oldScale = zoomFactor;
-            zoomFactor *= zoomDelta;
-
-            double f = (zoomFactor / oldScale) - 1;
-            double dx = mouseX - (drawingLayer.getBoundsInParent().getMinX() + drawingLayer.getBoundsInParent().getWidth() / 2);
-            double dy = mouseY - (drawingLayer.getBoundsInParent().getMinY() + drawingLayer.getBoundsInParent().getHeight() / 2);
-            
-            drawingLayer.setScaleX(zoomFactor);
-            drawingLayer.setScaleY(zoomFactor);
-            drawingLayer.setTranslateX(drawingLayer.getTranslateX() - f * dx);
-            drawingLayer.setTranslateY(drawingLayer.getTranslateY() - f * dy);
-        });
-        */
- /*      
-        scene.setOnScroll(event -> {
-            double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
-
-            // Position de la souris dans la scène
-            double mouseSceneX = event.getSceneX();
-            double mouseSceneY = event.getSceneY();
-
-            // Calculer les coordonnées locales avant le zoom
-            Point2D mouseLocalBeforeZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
-
-            // Appliquer le zoom
-            zoomFactor *= zoomDelta;
-            drawingLayer.setScaleX(zoomFactor);
-            drawingLayer.setScaleY(zoomFactor);
-
-            // Recalculer les coordonnées locales après le zoom
-            Point2D mouseLocalAfterZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
-
-            // Calculer la différence entre les deux positions locales
-            Point2D adjustment = mouseLocalAfterZoom.subtract(mouseLocalBeforeZoom);
-
-            // Ajuster les translations pour compenser
-            drawingLayer.setTranslateX(drawingLayer.getTranslateX() - adjustment.getX());
-            drawingLayer.setTranslateY(drawingLayer.getTranslateY() - adjustment.getY());
-        });
-*/
-
+      
+        /*
         scene.setOnScroll(event -> {
             double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
             
@@ -221,7 +190,40 @@ public class VisualisationMoteurAvecGroup extends Application {
             System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
             System.out.println("ScaleX: " + drawingLayer.getScaleX() + ", ScaleY: " + drawingLayer.getScaleY());
         });
+         */     
         
+        scene.setOnScroll(event -> {
+    	    // Déterminer le facteur de zoom
+    	    double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
+
+    	    // Position actuelle de la souris dans la scène
+    	    double mouseSceneX = event.getSceneX();
+    	    double mouseSceneY = event.getSceneY();
+
+    	    // Convertir la position de la souris dans l'espace local avant le zoom
+    	    Point2D mouseLocalBeforeZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+    	    // Appliquer le facteur de zoom
+    	    zoomFactor *= zoomDelta;
+    	    drawingLayer.setScaleX(zoomFactor);
+    	    drawingLayer.setScaleY(zoomFactor);
+
+    	    // Convertir à nouveau la position de la souris dans l'espace local après le zoom
+    	    Point2D mouseLocalAfterZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+    	    // Calculer la différence entre les positions locales avant et après le zoom
+    	    double deltaX = mouseLocalAfterZoom.getX() - mouseLocalBeforeZoom.getX();
+    	    double deltaY = mouseLocalAfterZoom.getY() - mouseLocalBeforeZoom.getY();
+
+    	    // Ajuster les translations pour compenser le mouvement
+    	    drawingLayer.setTranslateX(drawingLayer.getTranslateX() + deltaX * zoomFactor);
+    	    drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY * zoomFactor);
+
+    	    // Logs pour debug
+    	    System.out.println("Zoom Factor: " + zoomFactor);
+    	    System.out.println("Mouse Scene Position: (" + mouseSceneX + ", " + mouseSceneY + ")");
+    	    System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
+    	});
    
 
         // Gestion de la translation
@@ -322,7 +324,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         primaryStage.show();
     }
 
-    
+ /*  
     private Group createShapeWithLabel(Shape shape, Pane drawingLayer, double offsetX, double offsetY) {
         // Créer un groupe pour regrouper la forme et le texte
         Group group = new Group();
@@ -368,7 +370,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         });
 
         return group;
-    }
+    }*/
     
     private void addLabelToShape(String text, Shape shape, Group overlayGroup, Pane drawingLayer, double offsetX, double offsetY) {
     	 // Créer un texte avec une valeur par défaut
@@ -384,21 +386,21 @@ public class VisualisationMoteurAvecGroup extends Application {
         Runnable updateLabelPosition = () -> {
         	// Obtenir les limites transformées (bounding box en coordonnées globales)
         	Point2D bounds = shape.localToScene(new Point2D(offsetX, offsetY));
-
             // Calculer la position cible avec des offsets
             double targetX = bounds.getX();
             double targetY = bounds.getY();
-            
             // Centrer le texte par rapport à la position cible
             label.setX(targetX - label.getBoundsInLocal().getWidth() / 2);
             label.setY(targetY + label.getBoundsInLocal().getHeight() / 4); // Ajustement vertical pour le centrage
-            //label.setX(targetX );
-            //label.setY(targetY ); // Ajustement vertical pour le centrage
         };
 
         // Listener sur les transformations globales et locales
+        
+        // Si la shape subit une transformation on update la position des textes
         shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
+        
+        // Si on zoom, ou qu'on translate a lors on doit déplacer les label de l'espace ecran
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleYProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());

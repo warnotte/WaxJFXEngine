@@ -10,13 +10,14 @@
     -fx-fill: linear-gradient(to bottom, blue, green); 
     -fx-stroke: linear-gradient(to bottom right, yellow, red); 
     -fx-stroke-width: 2px; 
-    -fx-rotate: 0; 
-    transition: -fx-rotate 2s; 
+    transition: all 1s; 
 /*    transition-property: -fx-rotate;*/ 
 /*    transition-duration: 2s;*/ 
 } 
 .rectangle:hover { 
-    -fx-rotate: 90; 
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+    -fx-scale-z: 1.2;
 } 
 .circle { 
     -fx-fill: blue; 

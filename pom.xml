@@ -21,6 +21,13 @@
 			<artifactId>javafx-fxml</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
+		
+		<dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-swing</artifactId>
+        	<version>${javafx.version}</version>
+    </dependency>
+    
 	</dependencies>
 	<build>
 		<plugins>
@@ -35,9 +42,19 @@
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>${javafx.maven.plugin.version}</version>
+
 				<configuration>
+					<stripDebug>true</stripDebug>
+					<compress>2</compress>
+					<noHeaderFiles>true</noHeaderFiles>
+					<noManPages>true</noManPages>
+					<launcher>hellofx</launcher>
+					<jlinkImageName>hello</jlinkImageName>
+					<jlinkZipName>hellozip</jlinkZipName>
+					<!--<mainClass>hellofx/org.openjfx.MainApp</mainClass>-->
 					<mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
 				</configuration>
+
 
 				<executions>
 					<execution>

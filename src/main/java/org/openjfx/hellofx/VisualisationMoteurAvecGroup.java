@@ -219,6 +219,8 @@ public class VisualisationMoteurAvecGroup extends Application {
     		    label.setTextAlignment(TextAlignment.CENTER);
     		    label.setTextOrigin(VPos.CENTER);
     		    label.setStyle("-fx-text-alignment: center;");
+    		    label.setX(-label.getBoundsInLocal().getWidth()/2);
+    		    
     		    flotteurAll.getChildren().add(label);
 
     		    

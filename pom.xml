@@ -16,18 +16,25 @@
 			<artifactId>javafx-controls</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-graphics</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
-		
+
 		<dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-swing</artifactId>
-        	<version>${javafx.version}</version>
-    </dependency>
-    
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-swing</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>
@@ -97,12 +104,23 @@
 						<configuration>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+									<mainClass>org.openjfx.hellofx.GUIStarter</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>com.gluonhq</groupId>
+				<artifactId>gluonfx-maven-plugin</artifactId>
+				<version>1.0.25</version>
+				<configuration>
+					<mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+					<graalvmHome>c:\graalvm-jdk-23.0.2+7.1</graalvmHome>
+					<!---<graalvmHome>c:\graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>-->
+				</configuration>
 			</plugin>
 
 		</plugins>

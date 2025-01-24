@@ -42,7 +42,7 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 
-public class VisualisationMoteurAvecGroup extends Application {
+public class VisualisationMoteurAvecGroup_MERDERIE extends Application {
 
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
@@ -286,18 +286,21 @@ public class VisualisationMoteurAvecGroup extends Application {
     		}
         }
         
-        
-        addNodeToScene(groupeRectangle);
-        //drawingGroup.getChildren().add(groupeRectangle);           
+       
+        // Dessine un point au centre de la scene/monde 0, 0
        
         Circle centeroftheworld = new Circle(30) ;
         centeroftheworld.setFill(Color.RED);
-       // drawingGroup.getChildren().add(centeroftheworld);
         addNodeToScene(centeroftheworld);
+        
         
 	}
 
-	private void addNodeToScene(Node node) {
+	/**
+	 * Cette méthode permet d'ajouter des groupes, des shape et nodes dans la scene a dessiner.
+	 * @param node
+	 */
+	public void addNodeToScene(Node node) {
 		drawingGroup.getChildren().add(node);
 	}
 
@@ -521,7 +524,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * @param shape La forme Shape de l'objet representé
 	 * @param flotteur L'objet Metier a representer
 	 */
-	public void addShapeToSelectable(Shape rect, Flotteur flotteur) {
+	protected void addShapeToSelectable(Shape rect, Flotteur flotteur) {
 		ShapeToFlotteurMap.put(rect, flotteur);
 		
 		List<Shape> list = FlotteurToShapeMap.get(flotteur);
@@ -536,7 +539,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * Supprime le shape des cartes d'association des selections.
 	 * @param rect2
 	 */
-	public void removeShapeToSelectable(Shape rect2) {
+	protected void removeShapeToSelectable(Shape rect2) {
 		Flotteur flot = ShapeToFlotteurMap.get(rect2);
 		ShapeToFlotteurMap.remove(rect2);
 		FlotteurToShapeMap.remove(flot);
@@ -898,7 +901,6 @@ public class VisualisationMoteurAvecGroup extends Application {
             }
             copy.setFill(original.getFill());
         }
-      
         return copy;
     }
 
@@ -919,5 +921,5 @@ public class VisualisationMoteurAvecGroup extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-   
+    
 }

@@ -1,27 +1,23 @@
 package org.openjfx.hellofx;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.application.Application;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -36,58 +32,56 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class VisualisationMoteurAvecGroup extends Application {
+public class VisualisationMoteurAvecGroup_BAK2 extends Application {
 
-	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
     private double startX, startY; // Origine constante pour le rectangle de sélection
 
     private double zoomFactor = 1.0;
 
     // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
-    private final HashMap<Shape, Flotteur> ShapeToFlotteurMap = new HashMap<>();
-    // Pour retenir les shape qui on été selection a partir de leur objet metier.
-    private final HashMap<Flotteur, List<Shape>> FlotteurToShapeMap = new HashMap<>();
-    
+    private final HashMap<Shape, Flotteur> rectangleToFlotteurMap = new HashMap<>();
     private final Set<Flotteur> selectedFlotteurs = new HashSet<>();
 
     // Pour retenir le rectangle de selection et l'afficher
     private Rectangle selectionRectangle;
     
     // Calque pour l'espace monde (éléments dessinés)
-    private Group drawingGroup = new Group();
+    Group drawingGroup = new Group();
     // Calque pour l'overlay (éléments fixes comme les textes)
-    private Group overlayTextGroup = new Group();
+    Group overlayTextGroup = new Group();
     // Calque pour l'overlay (éléments fixes comme la sélection)
-    private Group overlaySelectionGroup = new Group();
+    Group overlaySelectionGroup = new Group();
     
-    
-    // Pane racine contenant les deux calques
-    private Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
-    private Pane uiLayer = new Pane(overlayTextGroup,/* selectionOverlayGroup,*/ overlaySelectionGroup); // Contient l'interface utilisateur
-    private Pane root = new Pane(drawingLayer, uiLayer);
+    // Groupe general d'overilay
+   // Group overlayGroup = new Group(overlaySelectionGroup, overlayTextGroup);
 
+    // Calque pour les selection
+    Group selectionOverlayGroup = new Group();
+
+    // Pane racine contenant les deux calques
+    Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
+    Pane uiLayer = new Pane(overlayTextGroup, selectionOverlayGroup, overlaySelectionGroup); // Contient l'interface utilisateur
+    Pane root = new Pane(drawingLayer, uiLayer);
+
+    Group groupeRectangle = new Group();
+    
     // Permet de savoir si on appuye sur SHIFT ou CTRL
 	private boolean SHIFT;
 	private boolean CTRL;
 	private Paint colorSelection = Color.MAGENTA;
     
-	// Les label que l'on retrouve en haut a gauche 
-	private Label selectionCountLabel;
-	private Label mouseCoordsLabel;
-	
-	
-	private Scene scene;
-	
-	// Permet de changes les bouton si necessaire.
-	MouseButton buttonSelection = MouseButton.PRIMARY;
-	MouseButton buttonTranslation = MouseButton.MIDDLE;
+	Label selectionCountLabel;
 	
     @Override
     public void start(Stage primaryStage) {
@@ -100,8 +94,8 @@ public class VisualisationMoteurAvecGroup extends Application {
     }
 
 	public Scene createScene() {
-		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
-    	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
+		// Permet de mettre a jour les selection orange quand on zoom ou scroll
+    	drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
     
     	
@@ -114,56 +108,8 @@ public class VisualisationMoteurAvecGroup extends Application {
         transition.setInterpolator(Interpolator.LINEAR);
         transition.play();
      */
-        initializeObjectsToDraw();
-        
-        initalizeUiLayer();
-        
-        scene = new Scene(root, 800, 600);
-        
-        System.err.println(" >> " + getClass().getResource("/test.css"));
-        // load and apply CSS. 
-        Optional.ofNullable(getClass().getResource("/test.css")) 
-                .map(URL::toExternalForm) 
-                .ifPresent(scene.getStylesheets()::add); 
-               
-        // Mise à jour des coordonnées de la souris
-        scene.setOnMouseMoved(event -> onMouseMouved(event));
-            
-        // Gestion de la souris au niveau du zoom avec la roulette
-        scene.setOnScroll(event -> OnScroll(event));
-   
-        // Gestion de la souris, translation de la scene, ainsi que systeme de selection.
-        scene.setOnMousePressed(event -> OnMousePressed(event));
-        scene.setOnMouseDragged(event -> OnMouseDragged(event));  
-        scene.setOnMouseReleased(event -> OnMouseReleased(event));
-
-        // Gestion du clavier
-        scene.setOnKeyPressed(event -> OnKeyPressed(event));
-        scene.setOnKeyReleased(event -> OnKeyReleased(event));
-        
-        // Centrer la vue sur le point (0, 0)
-        centerViewOnOrigin(drawingLayer, scene);
-        
-        // Recentre si on resize la fentre ??? Moi ca fait sauter le scroll...
-        /*
-        scene.widthProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-
-        scene.heightProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-        */
-        
-		return scene;
-	}
-
-	/**
-	 * Crée les objets a dessiner dans la scene
-	 */
-	private void initializeObjectsToDraw() {
-		 // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
-        Group groupeRectangle = new Group();
+        // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
+        //Group groupeRectangle = new Group();
         //groupeRectangle.setTranslateX(300);
         Transform e = Transform.translate(-450, -450);
         groupeRectangle.getTransforms().add(new Rotate(45));
@@ -193,7 +139,11 @@ public class VisualisationMoteurAvecGroup extends Application {
     			
     			Flotteur flotteur = new Flotteur("Flotteur " + j+"_"+i);
     			
+    			
     			Shape rect = new Rectangle(-30, -20, 60, 40);
+    			
+    			
+    			
     			
     			int rnd = i%9;
     			switch (rnd)
@@ -253,16 +203,16 @@ public class VisualisationMoteurAvecGroup extends Application {
     			
     			if (rnd == 0)
     			{
-    				Group arrow = createArrow(-30, -20-1, 30, -20-1, 3, "L");
-    				flotteurAll.getChildren().add(arrow);
+    			Group arrow = createArrow(drawingLayer, -30, -20-1, 30, -20-1, 3, "L");
+    			flotteurAll.getChildren().add(arrow);
     			}
     		    
     			
     			// TODO : Comprendre pourquoi les transitions CSS ne fonctionne pas si on utilise cette methode
     			// Texte en espace ecran
-    			addLabelToShape("HG_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ -30, -20);
-    			addLabelToShape("CE_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 0, 0);
-    			addLabelToShape("BD_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 30, 20);
+    			addLabelToShape("HG_"+i+""+j, rect, overlayTextGroup, drawingLayer, -30, -20);
+    			addLabelToShape("CE_"+i+""+j, rect, overlayTextGroup, drawingLayer, 0, 0);
+    			addLabelToShape("BD_"+i+""+j, rect, overlayTextGroup, drawingLayer, 30, 20);
     		    
     		    // Texte dans l'espace monde
     		    Text label = new Text("WXYZ");
@@ -272,41 +222,29 @@ public class VisualisationMoteurAvecGroup extends Application {
     		    label.setX(-label.getBoundsInLocal().getWidth()/2);
     		    
     		    flotteurAll.getChildren().add(label);
+
     		    
-    		    //flotteurAll.getStyleClass().add("rectangle");
-    		    // Debug
-    		    //rect2.getStyleClass().add("rectangle");
-    		    //rect.getStyleClass().add("rectangle");
+    		    
+    		    flotteurAll.getStyleClass().add("rectangle");
     		    
     		    groupeRectangle.getChildren().add(flotteurAll);
     			
-    		    // Ajoute cette shape associer a l'objet metier dans la map des objets selectionnables.
-    		    addShapeToSelectable(rect2, flotteur);
-    		    addShapeToSelectable(rect, flotteur);
+    		    // Ajoute cette shape associer a l'objet metier dans la map des objets selectionnables. 
+    		    rectangleToFlotteurMap.put(rect2, flotteur);
+    		    rectangleToFlotteurMap.put(rect, flotteur);
+    		    
     		}
         }
         
+        drawingGroup.getChildren().add(groupeRectangle);           
+
         
-        addNodeToScene(groupeRectangle);
-        //drawingGroup.getChildren().add(groupeRectangle);           
-       
         Circle centeroftheworld = new Circle(30) ;
         centeroftheworld.setFill(Color.RED);
-       // drawingGroup.getChildren().add(centeroftheworld);
-        addNodeToScene(centeroftheworld);
-        
-	}
+        drawingGroup.getChildren().add(centeroftheworld);           
 
-	private void addNodeToScene(Node node) {
-		drawingGroup.getChildren().add(node);
-	}
-
-	/**
-	 * Initalize le layer Ui
-	 */
-	private void initalizeUiLayer() {
-		// Label pour afficher les coordonnées de la souris
-        mouseCoordsLabel = new Label("Coordonnées : (x, y)");
+        // Label pour afficher les coordonnées de la souris
+        Label mouseCoordsLabel = new Label("Coordonnées : (x, y)");
         selectionCountLabel = new Label("Objets sélectionnés : 0");
      
         VBox labelContainer = new VBox();
@@ -326,223 +264,221 @@ public class VisualisationMoteurAvecGroup extends Application {
         labelContainer.getChildren().add(mouseCoordsLabel);
         
         uiLayer.getChildren().add(labelContainer);
+        
+        Scene scene = new Scene(root, 800, 600);
+        
+        System.err.println(" >> " + getClass().getResource("/test.css"));
+     // load and apply CSS. 
+        Optional.ofNullable(getClass().getResource("/test.css")) 
+                .map(URL::toExternalForm) 
+                .ifPresent(scene.getStylesheets()::add); 
+        
+        
+        // Mise à jour des coordonnées de la souris
+        scene.setOnMouseMoved(event -> updateMouseCoords(event, drawingLayer, mouseCoordsLabel));
+      
+        /*
+        scene.setOnScroll(event -> {
+            double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
+            
+            // Appliquer le zoom
+            zoomFactor *= zoomDelta;
+            drawingLayer.setScaleX(zoomFactor);
+            drawingLayer.setScaleY(zoomFactor);
+
+            // Log des propriétés
+            System.out.println("Zoom Factor: " + zoomFactor);
+            System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
+            System.out.println("ScaleX: " + drawingLayer.getScaleX() + ", ScaleY: " + drawingLayer.getScaleY());
+        });
+         */     
+        
+        scene.setOnScroll(event -> {
+    	    // Déterminer le facteur de zoom
+    	    double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
+
+    	    // Position actuelle de la souris dans la scène
+    	    double mouseSceneX = event.getSceneX();
+    	    double mouseSceneY = event.getSceneY();
+
+    	    // Convertir la position de la souris dans l'espace local avant le zoom
+    	    Point2D mouseLocalBeforeZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+    	    // Appliquer le facteur de zoom
+    	    zoomFactor *= zoomDelta;
+    	    drawingLayer.setScaleX(zoomFactor);
+    	    drawingLayer.setScaleY(zoomFactor);
+
+    	    // Convertir à nouveau la position de la souris dans l'espace local après le zoom
+    	    Point2D mouseLocalAfterZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
+
+    	    // Calculer la différence entre les positions locales avant et après le zoom
+    	    double deltaX = mouseLocalAfterZoom.getX() - mouseLocalBeforeZoom.getX();
+    	    double deltaY = mouseLocalAfterZoom.getY() - mouseLocalBeforeZoom.getY();
+
+    	    // Ajuster les translations pour compenser le mouvement
+    	    drawingLayer.setTranslateX(drawingLayer.getTranslateX() + deltaX * zoomFactor);
+    	    drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY * zoomFactor);
+
+    	    // Logs pour debug
+    	    System.out.println("Zoom Factor: " + zoomFactor);
+    	    System.out.println("Mouse Scene Position: (" + mouseSceneX + ", " + mouseSceneY + ")");
+    	    System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
+    	    
+    	    /*
+    	    Zoom Factor: 0.7435517614520297
+    	    Mouse Scene Position: (426.0, 277.3333333333333)
+    	    TranslateX: 246.2836903244558, TranslateY: 106.67353100911026
+    	    
+    	    drawingLayer.setTranslateX()
+    	    */
+    		
+    	    
+    	    if (zoomFactor>=0.2)
+    	    {
+    	    	overlayTextGroup.setVisible(true);
+    	    }
+    	    else
+    	    {
+    	    	overlayTextGroup.setVisible(false);
+    	    }
+    	    
+    	});
+   
+
+        // Gestion de la translation
+        scene.setOnMousePressed(event -> {
+            if (event.getButton() == MouseButton.MIDDLE) {
+                lastX = event.getSceneX();
+                lastY = event.getSceneY();
+            } else if (event.getButton() == MouseButton.PRIMARY) {
+                // Début du rectangle de sélection
+                startX = event.getX();
+                startY = event.getY();
+
+                if (selectionRectangle == null) {
+                    selectionRectangle = new Rectangle();
+                    selectionRectangle.setFill(Color.color(1, 1, 0, 0.8));
+                    selectionRectangle.setStroke(Color.BLACK);
+                    overlaySelectionGroup.getChildren().add(selectionRectangle);
+                }
+                selectionRectangle.setX(startX);
+                selectionRectangle.setY(startY);
+                selectionRectangle.setWidth(0.000);
+                selectionRectangle.setHeight(0.000);
+            }
+        });
+
+        scene.setOnMouseDragged(event -> {
+            if (event.getButton() == MouseButton.MIDDLE) {
+                double deltaX = event.getSceneX() - lastX;
+                double deltaY = event.getSceneY() - lastY;
+                drawingLayer.setTranslateX(drawingLayer.getTranslateX() + deltaX);
+                drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY);
+                lastX = event.getSceneX();
+                lastY = event.getSceneY();
+            } else if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
+                double currentX = event.getX();
+                double currentY = event.getY();
+
+                double x = Math.min(currentX, startX);
+                double y = Math.min(currentY, startY);
+                double width = Math.abs(currentX - startX);
+                double height = Math.abs(currentY - startY);
+
+                selectionRectangle.setX(x);
+                selectionRectangle.setY(y);
+                selectionRectangle.setWidth(width);
+                selectionRectangle.setHeight(height);
+            }
+        });
+        
+        scene.setOnMouseReleased(event -> {
+            if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
+            	
+                // Si le rectangle de sélection est trop petit, simuler un clic simple
+            	double offsetFake = 0.001;
+            	
+            	selectionRectangle.setWidth(selectionRectangle.getWidth()+offsetFake);
+            	selectionRectangle.setHeight(selectionRectangle.getHeight()+offsetFake);
+                            	
+                // Convertir les limites du rectangle de sélection en coordonnées de l'espace monde
+                double selectionX = selectionRectangle.getX();
+                double selectionY = selectionRectangle.getY();
+                double selectionWidth = selectionRectangle.getWidth();
+                double selectionHeight = selectionRectangle.getHeight();
+
+                // Rectangle de sélection comme un objet Shape
+                Rectangle selectionShape = new Rectangle(selectionX, selectionY, selectionWidth, selectionHeight);
+
+                if ((SHIFT==false) && (CTRL==false))
+                	selectedFlotteurs.clear();
+                
+                selectionOverlayGroup.getChildren().clear(); // Efface les anciens indicateurs
+
+                rectangleToFlotteurMap.forEach((shape, flotteur) -> {
+                    if (Shape.intersect(selectionShape, shape).getBoundsInLocal().getWidth() > 0) {
+                    	// TODO : Petit probleme si on fait un rectangle de selection ca ne remove pas les déjà selectionnés
+                    	// TODO : Peut etre que CTRL devrait simplement enelver la selection ? ou trouver mieux...
+                    	if ((CTRL==true) && (selectedFlotteurs.contains(flotteur)))
+                   			selectedFlotteurs.remove(flotteur);
+                    	else
+                    		selectedFlotteurs.add(flotteur);
+                    }
+                });
+
+                System.out.println("Flotteurs sélectionnés : " + selectedFlotteurs);
+
+                overlaySelectionGroup.getChildren().remove(selectionRectangle);
+                selectionRectangle = null;
+
+                // Mettre à jour les formes dans l'espace écran
+                updateSelectionOverlay();
+            }
+        });
+
+
+        scene.setOnKeyPressed(event -> {
+        	if (event.getCode() == KeyCode.ESCAPE) {
+                clearSelection();
+                System.out.println("Sélection annulée.");
+            }
+        	
+        	if (event.getCode() == KeyCode.SHIFT) {
+               SHIFT = true;
+            }
+        	if (event.getCode() == KeyCode.CONTROL) {
+               CTRL = true;
+            }
+        	
+        });
+        
+        scene.setOnKeyReleased(event -> {
+        	if (event.getCode() == KeyCode.SHIFT) {
+               SHIFT = false;
+            }
+        	if (event.getCode() == KeyCode.CONTROL) {
+               CTRL = false;
+        	}
+        });
+        
+        // Centrer la vue sur le point (0, 0)
+        centerViewOnOrigin(drawingLayer, scene);
+        // Recentre si on resize la fentre ??? Moi ca fait sauter le scroll...
+        /*
+        scene.widthProperty().addListener((observable, oldValue, newValue) -> {
+            centerViewOnOrigin(drawingLayer, scene);
+        });
+
+        scene.heightProperty().addListener((observable, oldValue, newValue) -> {
+            centerViewOnOrigin(drawingLayer, scene);
+        });
+        */
+        
+		return scene;
 	}
     
-	private void OnKeyPressed(KeyEvent event) {
-    	if (event.getCode() == KeyCode.ESCAPE) {
-            clearSelection();
-            System.out.println("Sélection annulée.");
-        }
-    	if (event.getCode() == KeyCode.SHIFT) {
-           SHIFT = true;
-        }
-    	if (event.getCode() == KeyCode.CONTROL) {
-           CTRL = true;
-        }
-    }
-	
-	
-	private void OnKeyReleased(KeyEvent event) {
-		if (event.getCode() == KeyCode.SHIFT) {
-			SHIFT = false;
-		}
-		if (event.getCode() == KeyCode.CONTROL) {
-			CTRL = false;
-		}
-		if (event.getCode() == KeyCode.R) {
-			centerViewOnOrigin(drawingLayer, scene);
-		}
-	}
-
-	/**
-	 * Modifie les coordonées de la souris dans la label en haut a gauche
-	 * @param event
-	 */
-	private void onMouseMouved(MouseEvent event) {
-		updateMouseCoords(event, drawingLayer, mouseCoordsLabel);
-	}
-
-	/**
-	 * Gestion du zoom avec la roulette de la souris pour zoomer dans la scene en utilisant le pointeur de la souris comme centre.
-	 * @param event
-	 */
-	private void OnScroll(ScrollEvent event) {
-		// Déterminer le facteur de zoom
-		double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
-
-		// Position actuelle de la souris dans la scène
-		double mouseSceneX = event.getSceneX();
-		double mouseSceneY = event.getSceneY();
-
-		// Convertir la position de la souris dans l'espace local avant le zoom
-		Point2D mouseLocalBeforeZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
-
-		// Appliquer le facteur de zoom
-		zoomFactor *= zoomDelta;
-		drawingLayer.setScaleX(zoomFactor);
-		drawingLayer.setScaleY(zoomFactor);
-
-		// Convertir à nouveau la position de la souris dans l'espace local après le zoom
-		Point2D mouseLocalAfterZoom = drawingLayer.sceneToLocal(mouseSceneX, mouseSceneY);
-
-		// Calculer la différence entre les positions locales avant et après le zoom
-		double deltaX = mouseLocalAfterZoom.getX() - mouseLocalBeforeZoom.getX();
-		double deltaY = mouseLocalAfterZoom.getY() - mouseLocalBeforeZoom.getY();
-
-		// Ajuster les translations pour compenser le mouvement
-		drawingLayer.setTranslateX(drawingLayer.getTranslateX() + deltaX * zoomFactor);
-		drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY * zoomFactor);
-
-		// Logs pour debug
-		System.out.println("Zoom Factor: " + zoomFactor);
-		System.out.println("Mouse Scene Position: (" + mouseSceneX + ", " + mouseSceneY + ")");
-		System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
-
-		/*
-		 * Zoom Factor: 0.7435517614520297 Mouse Scene Position: (426.0, 277.3333333333333) TranslateX: 246.2836903244558,
-		 * TranslateY: 106.67353100911026
-		 */
-
-		if (zoomFactor >= 0.2) {
-			overlayTextGroup.setVisible(true);
-		} else {
-			overlayTextGroup.setVisible(false);
-		}
-
-	}
-
-	private void OnMousePressed(MouseEvent event) 
-	{
-		// Pour gerer la translation de la scène
-		
-		//if (event.getButton() == MouseButton.MIDDLE) {
-		if (event.getButton() == buttonTranslation) {
-		            lastX = event.getSceneX();
-            lastY = event.getSceneY();
-    		
-        } else // Pour gerer le debut de selection
-        //	if (event.getButton() == MouseButton.PRIMARY) {
-           	if (event.getButton() == buttonSelection) {
-            // Début du rectangle de sélection
-            startX = event.getX();
-            startY = event.getY();
-
-            if (selectionRectangle == null) {
-                selectionRectangle = new Rectangle();
-                selectionRectangle.setFill(Color.color(1, 1, 0, 0.8));
-                selectionRectangle.setStroke(Color.BLACK);
-                overlaySelectionGroup.getChildren().add(selectionRectangle);
-            }
-            selectionRectangle.setX(startX);
-            selectionRectangle.setY(startY);
-            selectionRectangle.setWidth(0.000);
-            selectionRectangle.setHeight(0.000);
-        }	
-	}
-	
-	private void OnMouseDragged(MouseEvent event) {
-				
-		// Pour gerer la translation de la scène
-		//if (event.getButton() == MouseButton.MIDDLE) {
-		if (event.getButton() == buttonTranslation) {
-			double deltaX = event.getSceneX() - lastX;
-			double deltaY = event.getSceneY() - lastY;
-			drawingLayer.setTranslateX(drawingLayer.getTranslateX() + deltaX);
-			drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY);
-			lastX = event.getSceneX();
-			lastY = event.getSceneY();
-		} else
-			// Pour gerer le debut de selection
-		//	if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
-			if (event.getButton() == buttonSelection && selectionRectangle != null) {
-			double currentX = event.getX();
-			double currentY = event.getY();
-
-			double x = Math.min(currentX, startX);
-			double y = Math.min(currentY, startY);
-			double width = Math.abs(currentX - startX);
-			double height = Math.abs(currentY - startY);
-
-			selectionRectangle.setX(x);
-			selectionRectangle.setY(y);
-			selectionRectangle.setWidth(width);
-			selectionRectangle.setHeight(height);
-		}
-	}
-	
-	private void OnMouseReleased(MouseEvent event) {
-
-		// Pour gerer la fin de selection
-		// if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
-		if (event.getButton() == buttonSelection && selectionRectangle != null) {
-
-			// Si le rectangle de sélection est trop petit, simuler un clic simple
-			double offsetFake = 0.001;
-
-			// TODO : et pourquoi ne pas faire X - offsetFake en plus ? ;)
-			selectionRectangle.setWidth(selectionRectangle.getWidth() + offsetFake);
-			selectionRectangle.setHeight(selectionRectangle.getHeight() + offsetFake);
-
-			// Convertir les limites du rectangle de sélection en coordonnées de l'espace monde
-			double selectionX = selectionRectangle.getX();
-			double selectionY = selectionRectangle.getY();
-			double selectionWidth = selectionRectangle.getWidth();
-			double selectionHeight = selectionRectangle.getHeight();
-
-			// Rectangle de sélection comme un objet Shape
-			Rectangle selectionShape = new Rectangle(selectionX, selectionY, selectionWidth, selectionHeight);
-
-			if ((SHIFT == false) && (CTRL == false)) {
-				clearSelection();
-			}
-
-			// selectionOverlayGroup.getChildren().clear(); // Efface les anciens indicateurs
-			ShapeToFlotteurMap.forEach((shape, flotteur) -> {
-				if (Shape.intersect(selectionShape, shape).getBoundsInLocal().getWidth() > 0) {
-					if ((CTRL == true) /*&& (selectedFlotteurs.contains(flotteur))*/) {
-						removeFromSelection(flotteur);
-					} else {
-						addToSelection(flotteur);
-					}
-				}
-			});
-
-			System.out.println("Flotteurs sélectionnés : " + selectedFlotteurs);
-			overlaySelectionGroup.getChildren().remove(selectionRectangle);
-			selectionRectangle = null;
-
-			// Mettre à jour les formes dans l'espace écran -> plus necessaire avec le systeme de CSS
-			// updateSelectionOverlay();
-		}
-	}
-
-	/**
-	 * Ajoute une forme aux objets selectionnable et associe son objet metier
-	 * @param shape La forme Shape de l'objet representé
-	 * @param flotteur L'objet Metier a representer
-	 */
-	public void addShapeToSelectable(Shape rect, Flotteur flotteur) {
-		ShapeToFlotteurMap.put(rect, flotteur);
-		
-		List<Shape> list = FlotteurToShapeMap.get(flotteur);
-		if (list==null)
-			list = new ArrayList<>();
-		list.add(rect);
-		
-		FlotteurToShapeMap.put(flotteur, list);
-	}
-	
-	/**
-	 * Supprime le shape des cartes d'association des selections.
-	 * @param rect2
-	 */
-	public void removeShapeToSelectable(Shape rect2) {
-		Flotteur flot = ShapeToFlotteurMap.get(rect2);
-		ShapeToFlotteurMap.remove(rect2);
-		FlotteurToShapeMap.remove(flot);
-	}
-
-	/*
+    /*
     private void updateSelectionOverlay() {
         selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
 
@@ -572,73 +508,8 @@ public class VisualisationMoteurAvecGroup extends Application {
         });
     }*/
     
-	/**
-	 * Efface tout les objets de la selection
-	 */
-	private void clearSelection() {
-    	// TODO : Pourquoi pas essayer d'appeler removeFromSelection
-    	for (Iterator iterator = selectedFlotteurs.iterator(); iterator.hasNext();) {
-			Flotteur flotteur = (Flotteur) iterator.next();
-			
-			//removeFromSelection(flotteur); -> concurrent exception
-			// Helas repetition de la méthode removeFromSelection
-			List<Shape> shapes = FlotteurToShapeMap.get(flotteur);
-			for (int i = 0 ; i < shapes.size(); i++)
-			{
-				Shape shape = shapes.get(i);
-				boolean ret = shape.getStyleClass().remove("ENGINE_ShapeSelected");
-				//System.err.println("Remove style to "+shape.getClass()+" styles : "+shape.getStyleClass());
-			}
-		}
-    	selectedFlotteurs.clear();
-	}
     
-	/**
-	 * Ajouter un objet a la selection 
-     * @param objet Un objet DTO metier a rajouter
-	 */
-    private void addToSelection(Flotteur objet) {
-    	selectedFlotteurs.add(objet);
-    	List<Shape> shapes = FlotteurToShapeMap.get(objet);
-		for (int i = 0 ; i < shapes.size(); i++)
-		{
-			Shape shape = shapes.get(i);
-			
-			if (shape.getStyleClass().contains("ENGINE_ShapeSelected")==false)
-			{
-				boolean ret = shape.getStyleClass().add("ENGINE_ShapeSelected");
-				//System.err.println("Add style to "+shape.getClass()+" styles : "+shape.getStyleClass());
-			}
-		}
-	}
-
-    /**
-     * Supprime un objet de la selection
-     * @param objet Un objet DTO metier a supprimer
-     */
-	private void removeFromSelection(Flotteur objet) {
-		selectedFlotteurs.remove(objet);
-		List<Shape> shapes = FlotteurToShapeMap.get(objet);
-		for (int i = 0 ; i < shapes.size(); i++)
-		{
-			Shape shape = shapes.get(i);
-			boolean ret = shape.getStyleClass().remove("ENGINE_ShapeSelected");
-			//System.err.println("Remove style to "+shape.getClass()+" styles : "+shape.getStyleClass());
-		}
-	}
-
-	/**
-	 * Ajoute un text accroché a une shape (qui peut avoir subit des transformation d'espace). Ce texte sera affiche dans l'overlay des texte dans l'espace ecran et les positions
-	 * seront recalculé si la "camera" est modifié
-	 * @param text
-	 * @param shape
-	 * @param overlayGroup
-	 * @param drawingLayer
-	 * @param offsetX offset par rapport a point 0, 0 de la shape
-	 * @param offsetY offset par rapport a point 0, 0 de la shape
-	 */
-	public void addLabelToShape(String text, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
-		// TODO : Recevoir un objet texte et pas juste un string.
+    private void addLabelToShape(String text, Shape shape, Group overlayGroup, Pane drawingLayer, double offsetX, double offsetY) {
     	 // Créer un texte avec une valeur par défaut
         Text label = new Text(text);
         
@@ -648,7 +519,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         //label.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
         
         // Ajouter le label au groupe overlay
-        overlayTextGroup.getChildren().add(label);
+        overlayGroup.getChildren().add(label);
 
         // Méthode pour mettre à jour dynamiquement la position du texte
         Runnable updateLabelPosition = () -> {
@@ -679,7 +550,24 @@ public class VisualisationMoteurAvecGroup extends Application {
         updateLabelPosition.run();
     }
 
-       // Mise à jour des coordonnées de la souris
+    
+    private void clearSelection() {
+    	/*
+        rectangleToFlotteurMap.forEach((rect, flotteur) -> rect.setFill(Color.BLUE));
+        selectedFlotteurs.clear();
+        */
+        //rectangleToFlotteurMap.forEach((rect, flotteur) -> rect.setFill(Color.BLUE));
+        selectedFlotteurs.clear();
+        //selectionOverlayGroup.getChildren().clear(); // Fait dans updateSelectionOverlay
+        
+        updateSelectionOverlay();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    // Mise à jour des coordonnées de la souris
     private void updateMouseCoords(MouseEvent event, Pane drawingLayer, Label mouseCoordsLabel) {
         // Convertir les coordonnées de la scène vers celles du monde
         double worldX = drawingLayer.sceneToLocal(event.getSceneX(), event.getSceneY()).getX();
@@ -700,7 +588,7 @@ public class VisualisationMoteurAvecGroup extends Application {
      * @param textValue Texte à afficher au centre de la flèche
      * @return Un groupe contenant la flèche complète
      */
-    public Group createArrow(double startX, double startY, double endX, double endY, double arrowSize, String textValue) {
+    private Group createArrow(Pane drawingLayer, double startX, double startY, double endX, double endY, double arrowSize, String textValue) {
         Group arrowGroup = new Group();
 
         // Ligne de la flèche
@@ -784,7 +672,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         */
         
         
-        addLabelToShape("L.", line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
+        addLabelToShape("L.", line, overlayTextGroup, drawingLayer, (startX + endX) / 2, (startY + endY) / 2 - 2); 
         
         // Ajouter les éléments au groupe
         arrowGroup.getChildren().addAll(line, startTriangle, endTriangle);
@@ -816,14 +704,12 @@ public class VisualisationMoteurAvecGroup extends Application {
     }
     
  
-    /**
-     * Pour l'ancien system d'afficahge des selection. Je garde si le nouveau systeme de CSS merderait...
-     */
+
     private void updateSelectionOverlay() {
-    	//selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
+        selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
 
         // Recréer les formes pour chaque objet sélectionné
-    	ShapeToFlotteurMap.forEach((shape, flotteur) -> {
+        rectangleToFlotteurMap.forEach((shape, flotteur) -> {
             if (selectedFlotteurs.contains(flotteur)) {
                 try {
                     // Créer une copie exacte de la Shape
@@ -835,12 +721,18 @@ public class VisualisationMoteurAvecGroup extends Application {
                         highlightShape.getTransforms().add(shape.getLocalToSceneTransform());
                        // highlightShape.getTransforms().add(new Scale(1.2, 1.2, 1.0));
                         
+
+                  /*      // Obtenir les coordonnées globales de l'objet
+                        Bounds boundsInScene = shape.localToScene(shape.getBoundsInLocal());
+                        highlightShape.setLayoutX(boundsInScene.getMinX());
+                        highlightShape.setLayoutY(boundsInScene.getMinY());
+*/
                         // Appliquer un style visuel spécifique
                         highlightShape.setFill(colorSelection);
                         highlightShape.setOpacity(0.75);
 
                         // Ajouter la copie au groupe de surbrillance
-                        //selectionOverlayGroup.getChildren().add(highlightShape);
+                        selectionOverlayGroup.getChildren().add(highlightShape);
                     }
                 } catch (Exception e) {
                     System.err.println("Impossible de copier la forme : " + e.getMessage());
@@ -853,16 +745,13 @@ public class VisualisationMoteurAvecGroup extends Application {
 
     }
     
-    /**
-     * N'est plus utilisé, je garde au cas ou l'affichag de selection pas CSS merderait.
-     * @param original
-     * @return
-     */
     private Shape copyShape(Shape original) {
         Shape copy = null;
 
         if (original instanceof Rectangle rect) {
         	copy = new Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+            
+            
         } else if (original instanceof Circle circle) {
         	//copy = new Circle(circle.getRadius());
         	   copy = new Circle(circle.getCenterX(), circle.getCenterY(), circle.getRadius());
@@ -902,11 +791,6 @@ public class VisualisationMoteurAvecGroup extends Application {
         return copy;
     }
 
-    /**
-     * Censé centre la scene a l'origine. Mais ne fonctionne que lorsque l'on crée la scene. Si on zoom ou qu'on translate alors ca déconne!!!!
-     * @param drawingLayer
-     * @param scene
-     */
     private void centerViewOnOrigin(Pane drawingLayer, Scene scene) {
         double centerX = scene.getWidth() / 2;
         double centerY = scene.getHeight() / 2;
@@ -915,9 +799,17 @@ public class VisualisationMoteurAvecGroup extends Application {
         drawingLayer.setTranslateY(centerY);
     }
 
+    
+    static class Flotteur {
+        private final String name;
 
-    public static void main(String[] args) {
-        launch(args);
+        public Flotteur(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
-   
 }

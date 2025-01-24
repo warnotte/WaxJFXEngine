@@ -1,5 +1,6 @@
 .ENGINE_ShapeSelected {
 	-fx-fill: magenta;
+	-fx-stroke: magenta;
 }
 
 /* 

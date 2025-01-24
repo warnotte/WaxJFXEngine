@@ -1,8 +1,11 @@
 package org.openjfx.hellofx;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -49,8 +52,11 @@ public class VisualisationMoteurAvecGroup extends Application {
 
     private double zoomFactor = 1.0;
 
-    // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
-    private final HashMap<Shape, Flotteur> rectangleToFlotteurMap = new HashMap<>();
+ // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
+    private final HashMap<Shape, Flotteur> ShapeToFlotteurMap = new HashMap<>();
+ // Pour retenir les shape qui on été selection a partir de leur objet metier.
+    private final HashMap<Flotteur, List<Shape>> FlotteurToShapeMap = new HashMap<>();
+    
     private final Set<Flotteur> selectedFlotteurs = new HashSet<>();
 
     // Pour retenir le rectangle de selection et l'afficher
@@ -67,11 +73,11 @@ public class VisualisationMoteurAvecGroup extends Application {
    // Group overlayGroup = new Group(overlaySelectionGroup, overlayTextGroup);
 
     // Calque pour les selection
-    Group selectionOverlayGroup = new Group();
+    //Group selectionOverlayGroup = new Group();
 
     // Pane racine contenant les deux calques
     Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
-    Pane uiLayer = new Pane(overlayTextGroup, selectionOverlayGroup, overlaySelectionGroup); // Contient l'interface utilisateur
+    Pane uiLayer = new Pane(overlayTextGroup,/* selectionOverlayGroup,*/ overlaySelectionGroup); // Contient l'interface utilisateur
     Pane root = new Pane(drawingLayer, uiLayer);
 
     Group groupeRectangle = new Group();
@@ -94,8 +100,8 @@ public class VisualisationMoteurAvecGroup extends Application {
     }
 
 	public Scene createScene() {
-		// Permet de mettre a jour les selection orange quand on zoom ou scroll
-    	drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
+		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
+    	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
     
     	
@@ -225,13 +231,19 @@ public class VisualisationMoteurAvecGroup extends Application {
 
     		    
     		    
-    		    flotteurAll.getStyleClass().add("rectangle");
+    		    //flotteurAll.getStyleClass().add("rectangle");
+    		    // Debug
+    		    //rect2.getStyleClass().add("rectangle");
+    		    //rect.getStyleClass().add("rectangle");
     		    
     		    groupeRectangle.getChildren().add(flotteurAll);
     			
-    		    // Ajoute cette shape associer a l'objet metier dans la map des objets selectionnables. 
-    		    rectangleToFlotteurMap.put(rect2, flotteur);
-    		    rectangleToFlotteurMap.put(rect, flotteur);
+    		    // Ajoute cette shape associer a l'objet metier dans la map des objets selectionnables.
+    		    addShapeToSelectable(rect2, flotteur);
+    		    addShapeToSelectable(rect, flotteur);
+    		  
+    		    
+    		    
     		    
     		}
         }
@@ -412,18 +424,25 @@ public class VisualisationMoteurAvecGroup extends Application {
                 Rectangle selectionShape = new Rectangle(selectionX, selectionY, selectionWidth, selectionHeight);
 
                 if ((SHIFT==false) && (CTRL==false))
-                	selectedFlotteurs.clear();
+                {
+                	clearSelection();
+                }
                 
-                selectionOverlayGroup.getChildren().clear(); // Efface les anciens indicateurs
+               //selectionOverlayGroup.getChildren().clear(); // Efface les anciens indicateurs
 
-                rectangleToFlotteurMap.forEach((shape, flotteur) -> {
+                ShapeToFlotteurMap.forEach((shape, flotteur) -> {
                     if (Shape.intersect(selectionShape, shape).getBoundsInLocal().getWidth() > 0) {
                     	// TODO : Petit probleme si on fait un rectangle de selection ca ne remove pas les déjà selectionnés
                     	// TODO : Peut etre que CTRL devrait simplement enelver la selection ? ou trouver mieux...
+                    	// TODO : y'a un bug avec CTRL 
                     	if ((CTRL==true) && (selectedFlotteurs.contains(flotteur)))
-                   			selectedFlotteurs.remove(flotteur);
+                    	{
+                    		removeFromSelection(flotteur);
+                    	}
                     	else
-                    		selectedFlotteurs.add(flotteur);
+                    	{
+                    		addToSelection(flotteur);
+                    	}
                     }
                 });
 
@@ -432,8 +451,8 @@ public class VisualisationMoteurAvecGroup extends Application {
                 overlaySelectionGroup.getChildren().remove(selectionRectangle);
                 selectionRectangle = null;
 
-                // Mettre à jour les formes dans l'espace écran
-                updateSelectionOverlay();
+                // Mettre à jour les formes dans l'espace écran -> plus necessaire avec le systeme de CSS
+                // updateSelectionOverlay();
             }
         });
 
@@ -478,7 +497,36 @@ public class VisualisationMoteurAvecGroup extends Application {
 		return scene;
 	}
     
-    /*
+    
+
+
+	/**
+	 * Ajoute une forme aux objets selectionnable et associe son objet metier
+	 * @param rect
+	 * @param flotteur
+	 */
+	private void addShapeToSelectable(Shape rect, Flotteur flotteur) {
+		ShapeToFlotteurMap.put(rect, flotteur);
+		
+		List<Shape> list = FlotteurToShapeMap.get(flotteur);
+		if (list==null)
+			list = new ArrayList<>();
+		list.add(rect);
+		
+		FlotteurToShapeMap.put(flotteur, list);
+	}
+	
+	/**
+	 * Supprime le shape des cartes d'association des selections.
+	 * @param rect2
+	 */
+	private void removeShapeToSelectable(Shape rect2) {
+		Flotteur flot = ShapeToFlotteurMap.get(rect2);
+		ShapeToFlotteurMap.remove(rect2);
+		FlotteurToShapeMap.remove(flot);
+	}
+
+	/*
     private void updateSelectionOverlay() {
         selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
 
@@ -509,7 +557,52 @@ public class VisualisationMoteurAvecGroup extends Application {
     }*/
     
     
-    private void addLabelToShape(String text, Shape shape, Group overlayGroup, Pane drawingLayer, double offsetX, double offsetY) {
+    private void clearSelection() {
+    	// TODO : Pourquoi pas essayer d'appeler removeFromSelection
+    	for (Iterator iterator = selectedFlotteurs.iterator(); iterator.hasNext();) {
+			Flotteur flotteur = (Flotteur) iterator.next();
+			
+			//removeFromSelection(flotteur); -> concurrent exception
+			// Helas repetition de la méthode removeFromSelection
+			List<Shape> shapes = FlotteurToShapeMap.get(flotteur);
+			for (int i = 0 ; i < shapes.size(); i++)
+			{
+				Shape shape = shapes.get(i);
+				boolean ret = shape.getStyleClass().remove("ENGINE_ShapeSelected");
+				//System.err.println("Remove style to "+shape.getClass()+" styles : "+shape.getStyleClass());
+			}
+		}
+    	selectedFlotteurs.clear();
+	}
+    
+    private void addToSelection(Flotteur flotteur) {
+    	selectedFlotteurs.add(flotteur);
+    	List<Shape> shapes = FlotteurToShapeMap.get(flotteur);
+		for (int i = 0 ; i < shapes.size(); i++)
+		{
+			Shape shape = shapes.get(i);
+			
+			if (shape.getStyleClass().contains("ENGINE_ShapeSelected")==false)
+			{
+				boolean ret = shape.getStyleClass().add("ENGINE_ShapeSelected");
+				//System.err.println("Add style to "+shape.getClass()+" styles : "+shape.getStyleClass());
+			}
+		}
+    	
+	}
+
+	private void removeFromSelection(Flotteur flotteur) {
+		selectedFlotteurs.remove(flotteur);
+		List<Shape> shapes = FlotteurToShapeMap.get(flotteur);
+		for (int i = 0 ; i < shapes.size(); i++)
+		{
+			Shape shape = shapes.get(i);
+			boolean ret = shape.getStyleClass().remove("ENGINE_ShapeSelected");
+			//System.err.println("Remove style to "+shape.getClass()+" styles : "+shape.getStyleClass());
+		}
+	}
+
+	private void addLabelToShape(String text, Shape shape, Group overlayGroup, Pane drawingLayer, double offsetX, double offsetY) {
     	 // Créer un texte avec une valeur par défaut
         Text label = new Text(text);
         
@@ -550,18 +643,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         updateLabelPosition.run();
     }
 
-    
-    private void clearSelection() {
-    	/*
-        rectangleToFlotteurMap.forEach((rect, flotteur) -> rect.setFill(Color.BLUE));
-        selectedFlotteurs.clear();
-        */
-        //rectangleToFlotteurMap.forEach((rect, flotteur) -> rect.setFill(Color.BLUE));
-        selectedFlotteurs.clear();
-        //selectionOverlayGroup.getChildren().clear(); // Fait dans updateSelectionOverlay
-        
-        updateSelectionOverlay();
-    }
+   
 
     public static void main(String[] args) {
         launch(args);
@@ -706,10 +788,10 @@ public class VisualisationMoteurAvecGroup extends Application {
  
 
     private void updateSelectionOverlay() {
-        selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
+    	//selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
 
         // Recréer les formes pour chaque objet sélectionné
-        rectangleToFlotteurMap.forEach((shape, flotteur) -> {
+    	ShapeToFlotteurMap.forEach((shape, flotteur) -> {
             if (selectedFlotteurs.contains(flotteur)) {
                 try {
                     // Créer une copie exacte de la Shape
@@ -721,18 +803,12 @@ public class VisualisationMoteurAvecGroup extends Application {
                         highlightShape.getTransforms().add(shape.getLocalToSceneTransform());
                        // highlightShape.getTransforms().add(new Scale(1.2, 1.2, 1.0));
                         
-
-                  /*      // Obtenir les coordonnées globales de l'objet
-                        Bounds boundsInScene = shape.localToScene(shape.getBoundsInLocal());
-                        highlightShape.setLayoutX(boundsInScene.getMinX());
-                        highlightShape.setLayoutY(boundsInScene.getMinY());
-*/
                         // Appliquer un style visuel spécifique
                         highlightShape.setFill(colorSelection);
                         highlightShape.setOpacity(0.75);
 
                         // Ajouter la copie au groupe de surbrillance
-                        selectionOverlayGroup.getChildren().add(highlightShape);
+                        //selectionOverlayGroup.getChildren().add(highlightShape);
                     }
                 } catch (Exception e) {
                     System.err.println("Impossible de copier la forme : " + e.getMessage());

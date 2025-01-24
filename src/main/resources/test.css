@@ -1,3 +1,11 @@
+.ENGINE_ShapeSelected {
+	-fx-fill: magenta;
+}
+
+/* 
+// Remove all that shit 
+*/
+
 .button { 
     -fx-opacity: 0.5; 
     transition: -fx-opacity 1s; 

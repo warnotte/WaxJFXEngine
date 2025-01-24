@@ -43,7 +43,7 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 
-public class VisualisationMoteurAvecGroup extends Application {
+public class VisualisationMoteurAvecGroup2 extends Application {
 
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
@@ -93,7 +93,6 @@ public class VisualisationMoteurAvecGroup extends Application {
 	MouseButton buttonSelection = MouseButton.PRIMARY;
 	MouseButton buttonTranslation = MouseButton.MIDDLE;
 	
-	
     @Override
     public void start(Stage primaryStage) {
         
@@ -126,13 +125,6 @@ public class VisualisationMoteurAvecGroup extends Application {
         
         initializeObjectsToDraw();
         initalizeUiLayer();
-        
-        
-        drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-        drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-        drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-        drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-
         
         scene = new Scene(root, 800, 600);
         
@@ -465,14 +457,14 @@ public class VisualisationMoteurAvecGroup extends Application {
 		
 		//if (event.getButton() == MouseButton.MIDDLE) {
 		if (event.getButton() == buttonTranslation) {
-			lastX = event.getSceneX();
-		            lastY = event.getSceneY();
+		            lastX = event.getSceneX();
+            lastY = event.getSceneY();
     		
         } else // Pour gerer le debut de selection
         //	if (event.getButton() == MouseButton.PRIMARY) {
            	if (event.getButton() == buttonSelection) {
             // Début du rectangle de sélection
-           		startX = event.getX();
+            startX = event.getX();
             startY = event.getY();
 
             if (selectionRectangle == null) {
@@ -489,7 +481,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	}
 	
 	protected void OnMouseDragged(MouseEvent event) {
-	
+				
 		// Pour gerer la translation de la scène
 		//if (event.getButton() == MouseButton.MIDDLE) {
 		if (event.getButton() == buttonTranslation) {
@@ -672,8 +664,6 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 */
 	public void addLabelToShapeInScreenSpace(Text label, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
-		label.setUserData(shape); // Associer la Shape au label pour un accès ultérieur
-		  
 		// Ajouter le label au groupe overlay
         overlayTextGroup.getChildren().add(label);
 
@@ -694,20 +684,16 @@ public class VisualisationMoteurAvecGroup extends Application {
         // Si la shape subit une transformation on update la position des textes
         shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-        /*
+        
         // Si on zoom, ou qu'on translate a lors on doit déplacer les label de l'espace ecran
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleYProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.translateXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.translateYProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-*/
+
         // Forcer une première mise à jour
-  //      updateLabelPosition.run();
-        // Mise à jour initiale de la position
-        //Point2D bounds = shape.localToScene(Point2D.ZERO);
         updateLabelPosition.run();
-        
 	}
 	
        // Mise à jour des coordonnées de la souris
@@ -841,13 +827,6 @@ public class VisualisationMoteurAvecGroup extends Application {
     }
     
     private void reinitializeScene() {
-    	
-    	Set<Flotteur> tempSelectedFlotteurs = new HashSet<>();
-        // Sauvegarder les Flotteurs sélectionnés
-        tempSelectedFlotteurs.clear();
-        tempSelectedFlotteurs.addAll(selectedFlotteurs);
-
-    	
         // Vider le groupe de dessin
         drawingGroup.getChildren().clear();
         overlayTextGroup.getChildren().clear();
@@ -858,34 +837,11 @@ public class VisualisationMoteurAvecGroup extends Application {
         
         // Réinitialiser les objets à dessiner
         initializeObjectsToDraw();
-        
-        // Restaurer la sélection
-        for (Flotteur flotteur : tempSelectedFlotteurs) {
-            addToSelection(flotteur);
-        }
-        tempSelectedFlotteurs.clear();
-        System.out.println("Sélection restaurée : " + selectedFlotteurs);
-        
-        // Mettre à jour tous les labels après la recréation
-        updateAllLabels();
 
         // Log pour débogage
         System.out.println("La scène a été réinitialisée.");
     }
     
-    
-    private void updateAllLabels() {
-        for (Node node : overlayTextGroup.getChildren()) {
-            if (node instanceof Text label) {
-                Shape associatedShape = (Shape) label.getUserData(); // Récupérer la Shape associée
-                if (associatedShape != null) {
-                    Point2D bounds = associatedShape.localToScene(Point2D.ZERO);
-                    label.setX(bounds.getX() - label.getBoundsInLocal().getWidth() / 2);
-                    label.setY(bounds.getY() + label.getBoundsInLocal().getHeight() / 4);
-                }
-            }
-        }
-    }
     
 
 

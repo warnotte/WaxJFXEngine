@@ -1,0 +1,5 @@
+DEFI 2 : 
+
+Faire un modele ou on place des rectangles dans le monde 
+	- Je veux bouger les elements a la souris (donc changer les position de l'objet metier par du shape).
+	- Je veux avoir "une fenetre" pour editer la position des elements et voire le changement a l'écran. 

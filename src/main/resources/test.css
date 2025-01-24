@@ -16,17 +16,14 @@
     -fx-opacity: 1.0; 
 } 
 .rectangle { 
-    -fx-fill: linear-gradient(to bottom, blue, green); 
-    -fx-stroke: linear-gradient(to bottom right, yellow, red); 
-    -fx-stroke-width: 2px; 
-    transition: all 1s; 
+    transition: -fx-scale-x 1s; 
 /*    transition-property: -fx-rotate;*/ 
 /*    transition-duration: 2s;*/ 
 } 
 .rectangle:hover { 
     -fx-scale-x: 1.2;
     -fx-scale-y: 1.2;
-    -fx-scale-z: 1.2;
+    
 } 
 .circle { 
     -fx-fill: blue; 

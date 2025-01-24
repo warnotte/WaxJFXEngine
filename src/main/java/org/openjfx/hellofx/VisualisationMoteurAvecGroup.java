@@ -10,12 +10,15 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.application.Application;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -41,6 +44,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class VisualisationMoteurAvecGroup extends Application {
 
@@ -70,8 +74,8 @@ public class VisualisationMoteurAvecGroup extends Application {
     
     // Pane racine contenant les deux calques
     private Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
-    private Pane uiLayer = new Pane(overlayTextGroup,/* selectionOverlayGroup,*/ overlaySelectionGroup); // Contient l'interface utilisateur
-    private Pane root = new Pane(drawingLayer, uiLayer);
+    private Pane uiLayer = new Pane(); // Contient l'interface utilisateur
+    private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
 
     // Permet de savoir si on appuye sur SHIFT ou CTRL
 	private boolean SHIFT;
@@ -103,7 +107,10 @@ public class VisualisationMoteurAvecGroup extends Application {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
-    
+		// Omets les évenement souris sur ces 2 calques car il masquent les evenement souris sur les evenement du "monde"
+		overlayTextGroup.setMouseTransparent(true);
+		overlaySelectionGroup.setMouseTransparent(true);
+		
     	
     	// Style du fond
         root.setStyle("-fx-background-color: white;");
@@ -115,7 +122,6 @@ public class VisualisationMoteurAvecGroup extends Application {
         transition.play();
      */
         initializeObjectsToDraw();
-        
         initalizeUiLayer();
         
         scene = new Scene(root, 800, 600);
@@ -182,8 +188,9 @@ public class VisualisationMoteurAvecGroup extends Application {
     			flotteurAll.setTranslateY(i*100);
     			flotteurAll.setRotate((j+i)*10);
     			
+    			
+    			// Ordinateur en PLS si activé.
     			/*
-    			// Si je mets ceci alors la selection ne sera pas animée...
     	        RotateTransition transition2 = new RotateTransition(Duration.seconds(15), flotteurAll);
     	        transition2.setFromAngle(0);
     	        transition2.setToAngle(360);
@@ -236,12 +243,21 @@ public class VisualisationMoteurAvecGroup extends Application {
     			rect.setFill(Color.BLUE);
     			rect.setStroke(Color.BLACK);
     			
-    		    			
+    			rect.setOnMouseEntered(event -> {
+    				System.err.println("Entered");
+    			});
+    			rect.setOnMouseExited(event -> {
+    				System.err.println("Exited");
+    			});
+    			rect.setOnMouseClicked(event -> {
+    				System.err.println("Clicked");
+    			});		
+    			
     			Rectangle rect2 = new Rectangle(-35, -25, 3, 3);
     			rect2.setFill(Color.GREEN);
     			rect2.setStroke(Color.BLACK);
     			
-    			//rect.getStyleClass().add("rectangle"); 
+    			rect.getStyleClass().add("rectangle"); 
     			/*rect.setStyle(":hover {"
     					+ "    -fx-background-color: #383838;"
     					+ "    -fx-scale-y: 1.1;"
@@ -259,6 +275,7 @@ public class VisualisationMoteurAvecGroup extends Application {
     		    
     			
     			// TODO : Comprendre pourquoi les transitions CSS ne fonctionne pas si on utilise cette methode
+    			// TODO : Je crois que ca pose probleme aussi si on mets rect.onMousEntered etc ...
     			// Texte en espace ecran
     			addLabelToShape("HG_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ -30, -20);
     			addLabelToShape("CE_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 0, 0);
@@ -266,6 +283,7 @@ public class VisualisationMoteurAvecGroup extends Application {
     		    
     		    // Texte dans l'espace monde
     		    Text label = new Text("WXYZ");
+    		    label.setMouseTransparent(true);
     		    label.setTextAlignment(TextAlignment.CENTER);
     		    label.setTextOrigin(VPos.CENTER);
     		    label.setStyle("-fx-text-alignment: center;");
@@ -322,13 +340,19 @@ public class VisualisationMoteurAvecGroup extends Application {
         labelContainer.setLayoutX(10);
         labelContainer.setLayoutY(10); // Position globale du conteneur
         
+        Button button = new Button("Salut");
+        button.setOnMouseClicked(e -> {
+        	System.err.println("Click on button on uilayer");
+        });
+        
         labelContainer.getChildren().add(selectionCountLabel);
         labelContainer.getChildren().add(mouseCoordsLabel);
+        labelContainer.getChildren().add(button);
         
         uiLayer.getChildren().add(labelContainer);
 	}
     
-	private void OnKeyPressed(KeyEvent event) {
+	protected void OnKeyPressed(KeyEvent event) {
     	if (event.getCode() == KeyCode.ESCAPE) {
             clearSelection();
             System.out.println("Sélection annulée.");
@@ -341,8 +365,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         }
     }
 	
-	
-	private void OnKeyReleased(KeyEvent event) {
+	protected void OnKeyReleased(KeyEvent event) {
 		if (event.getCode() == KeyCode.SHIFT) {
 			SHIFT = false;
 		}
@@ -358,7 +381,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * Modifie les coordonées de la souris dans la label en haut a gauche
 	 * @param event
 	 */
-	private void onMouseMouved(MouseEvent event) {
+	protected void onMouseMouved(MouseEvent event) {
 		updateMouseCoords(event, drawingLayer, mouseCoordsLabel);
 	}
 
@@ -366,7 +389,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * Gestion du zoom avec la roulette de la souris pour zoomer dans la scene en utilisant le pointeur de la souris comme centre.
 	 * @param event
 	 */
-	private void OnScroll(ScrollEvent event) {
+	protected void OnScroll(ScrollEvent event) {
 		// Déterminer le facteur de zoom
 		double zoomDelta = event.getDeltaY() > 0 ? 1.1 : 0.9;
 
@@ -411,7 +434,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
 	}
 
-	private void OnMousePressed(MouseEvent event) 
+	protected void OnMousePressed(MouseEvent event) 
 	{
 		// Pour gerer la translation de la scène
 		
@@ -440,7 +463,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         }	
 	}
 	
-	private void OnMouseDragged(MouseEvent event) {
+	protected void OnMouseDragged(MouseEvent event) {
 				
 		// Pour gerer la translation de la scène
 		//if (event.getButton() == MouseButton.MIDDLE) {
@@ -470,7 +493,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 		}
 	}
 	
-	private void OnMouseReleased(MouseEvent event) {
+	protected void OnMouseReleased(MouseEvent event) {
 
 		// Pour gerer la fin de selection
 		// if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
@@ -641,7 +664,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 		// TODO : Recevoir un objet texte et pas juste un string.
     	 // Créer un texte avec une valeur par défaut
         Text label = new Text(text);
-        
+        //label.setMouseTransparent(true);
         // Définir la couleur et le style
         label.setFill(Color.RED);
 
@@ -739,51 +762,6 @@ public class VisualisationMoteurAvecGroup extends Application {
         //endTriangle.setStroke(Color.BLUE);
         //endTriangle.setStrokeWidth(0.1);
 
-        
-        // Texte au centre de la flèche
-         /* Cette portion du code est la meme que AddLabelToShape
-        Text distanceText = new Text((startX + endX) / 2, (startY + endY) / 2, textValue);
-        distanceText.setFill(Color.RED);
-        distanceText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        distanceText.setX(distanceText.getX() - distanceText.getLayoutBounds().getWidth() / 2);
-        distanceText.setY(distanceText.getY() - distanceText.getLayoutBounds().getHeight() / 2);
-
-        
-        
-        // Positionner le texte dans l'espace local du shape
-        Runnable updateTextPosition = () -> {
-            Bounds bounds = shape.getBoundsInLocal();
-
-            // Calcul de la position locale avec les offsets
-            double localX = bounds.getMinX() + bounds.getWidth() * offsetX;
-            double localY = bounds.getMinY() + bounds.getHeight() * offsetY;
-
-            // Centrer le texte
-            label.setX(localX - label.getBoundsInLocal().getWidth() / 2);
-            label.setY(localY + label.getBoundsInLocal().getHeight() / 4); // Ajustement vertical
-        };*/
-        /*
-        // Mettre à jour la position du texte
-        //shape.boundsInLocalProperty().addListener((observable, oldValue, newValue) -> updateTextPosition.run());
-        //updateTextPosition.run();
-
-        // Ajouter le texte au groupe
-        //group.getChildren().add(label);
-
-        // Compensez l'échelle et la rotation pour isoler le texte
-        arrowGroup.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> {
-            // Compensez la rotation
-            double angle4 = arrowGroup.getRotate();
-            distanceText.setRotate(-angle4);
-
-            // Compensez l'échelle
-            double scale = 1 / drawingLayer.getScaleX();
-            distanceText.setScaleX(scale);
-            distanceText.setScaleY(scale);
-        });
-        */
-        
-        
         addLabelToShape("L.", line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
         
         // Ajouter les éléments au groupe

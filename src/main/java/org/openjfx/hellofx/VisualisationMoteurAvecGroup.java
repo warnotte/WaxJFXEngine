@@ -270,12 +270,12 @@ public class VisualisationMoteurAvecGroup extends Application {
     			}
     		    
     			
-    			// TODO : Comprendre pourquoi les transitions CSS ne fonctionne pas si on utilise cette methode
-    			// TODO : Je crois que ca pose probleme aussi si on mets rect.onMousEntered etc ...
     			// Texte en espace ecran
+    			Text label2 = new Text("BD_"+i+""+j);
+    	        label2.setFill(Color.GREEN);
+    			addLabelToShapeInScreenSpace(label2, rect, /*overlayTextGroup, drawingLayer,*/ 30, 20);
     			addLabelToShapeInScreenSpace("HG_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ -30, -20);
     			addLabelToShapeInScreenSpace("CE_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 0, 0);
-    			addLabelToShapeInScreenSpace("BD_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 30, 20);
     		    
     		    // Texte dans l'espace monde -> addLAbelToShapeInWordSpace... ?? :)
     		    Text label = new Text("WXYZ");
@@ -617,26 +617,33 @@ public class VisualisationMoteurAvecGroup extends Application {
 	}
 
 	/**
-	 * Ajoute un text accroché a une shape (qui peut avoir subit des transformation d'espace). Ce texte sera affiche dans l'overlay des texte dans l'espace ecran et les positions
-	 * seront recalculé si la "camera" est modifié
-	 * @param text
-	 * @param shape
-	 * @param overlayGroup
-	 * @param drawingLayer
+	 * Ajoute un text accroché a une shape (qui peut avoir subit des transformation d'espace). 
+	 * Ce texte sera affiche dans l'overlay des texte dans l'espace ecran et les positions seront recalculé si la "camera" est modifié.
+	 * Le texte est centré par defaut.
+	 * @param text le texte
+	 * @param shape la forme parente
 	 * @param offsetX offset par rapport a point 0, 0 de la shape
 	 * @param offsetY offset par rapport a point 0, 0 de la shape
 	 */
-	public void addLabelToShapeInScreenSpace(String text, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
-		// TODO : Recevoir un objet texte et pas juste un string.
-    	 // Créer un texte avec une valeur par défaut
-        Text label = new Text(text);
-        //label.setMouseTransparent(true);
+	public void addLabelToShapeInScreenSpace(String text, Shape shape, double offsetX, double offsetY) {
+		Text label = new Text(text);
         // Définir la couleur et le style
-        label.setFill(Color.RED);
+        label.setFill(Color.BLACK);
+        addLabelToShapeInScreenSpace(label, shape, offsetX, offsetY);
+    }
+	
+	/**
+	 * Ajoute un text accroché a une shape (qui peut avoir subit des transformation d'espace). 
+	 * Ce texte sera affiche dans l'overlay des texte dans l'espace ecran et les positions seront recalculé si la "camera" est modifié.
+	 * Le texte est centré par defaut.
+	 * @param text le texte
+	 * @param shape la forme parente
+	 * @param offsetX offset par rapport a point 0, 0 de la shape
+	 * @param offsetY offset par rapport a point 0, 0 de la shape
+	 */
+	public void addLabelToShapeInScreenSpace(Text label, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
-        //label.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-        
-        // Ajouter le label au groupe overlay
+		// Ajouter le label au groupe overlay
         overlayTextGroup.getChildren().add(label);
 
         // Méthode pour mettre à jour dynamiquement la position du texte
@@ -666,8 +673,8 @@ public class VisualisationMoteurAvecGroup extends Application {
 
         // Forcer une première mise à jour
         updateLabelPosition.run();
-    }
-
+	}
+	
        // Mise à jour des coordonnées de la souris
     private void updateMouseCoords(MouseEvent event, Pane drawingLayer, Label mouseCoordsLabel) {
         // Convertir les coordonnées de la scène vers celles du monde

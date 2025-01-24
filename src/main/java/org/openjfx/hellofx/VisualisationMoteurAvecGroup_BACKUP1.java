@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.application.Application;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
@@ -32,6 +34,7 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
@@ -41,8 +44,9 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class VisualisationMoteurAvecGroup extends Application {
+public class VisualisationMoteurAvecGroup_BACKUP1 extends Application {
 
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
@@ -759,7 +763,92 @@ public class VisualisationMoteurAvecGroup extends Application {
         return new Polygon(x, y, x1, y1, x2, y2);
     }
     
+ 
+    /**
+     * Pour l'ancien system d'afficahge des selection. Je garde si le nouveau systeme de CSS merderait...
+     */
+    private void updateSelectionOverlay() {
+    	//selectionOverlayGroup.getChildren().clear(); // Efface les anciennes formes
 
+        // Recréer les formes pour chaque objet sélectionné
+    	ShapeToFlotteurMap.forEach((shape, flotteur) -> {
+            if (selectedFlotteurs.contains(flotteur)) {
+                try {
+                    // Créer une copie exacte de la Shape
+                    Shape highlightShape = copyShape(shape);
+
+                    if (highlightShape != null) {
+                    	 // Appliquer explicitement la transformation globale
+                        highlightShape.getTransforms().clear(); // Nettoyer les transformations existantes
+                        highlightShape.getTransforms().add(shape.getLocalToSceneTransform());
+                       // highlightShape.getTransforms().add(new Scale(1.2, 1.2, 1.0));
+                        
+                        // Appliquer un style visuel spécifique
+                        highlightShape.setFill(colorSelection);
+                        highlightShape.setOpacity(0.75);
+
+                        // Ajouter la copie au groupe de surbrillance
+                        //selectionOverlayGroup.getChildren().add(highlightShape);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Impossible de copier la forme : " + e.getMessage());
+                }
+            }
+        });
+        
+        // Mettre à jour le label du nombre d'objets selectionnés
+        selectionCountLabel.setText("Objets sélectionnés : " + selectedFlotteurs.size());
+
+    }
+    
+    /**
+     * N'est plus utilisé, je garde au cas ou l'affichag de selection pas CSS merderait.
+     * @param original
+     * @return
+     */
+    private Shape copyShape(Shape original) {
+        Shape copy = null;
+
+        if (original instanceof Rectangle rect) {
+        	copy = new Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+        } else if (original instanceof Circle circle) {
+        	//copy = new Circle(circle.getRadius());
+        	   copy = new Circle(circle.getCenterX(), circle.getCenterY(), circle.getRadius());
+        } else if (original instanceof Ellipse ellipse) {
+            //copy = new Ellipse(ellipse.getRadiusX(), ellipse.getRadiusY());
+            copy = new Ellipse(ellipse.getCenterX(), ellipse.getCenterY(), ellipse.getRadiusX(), ellipse.getRadiusY());
+        } else if (original instanceof Line line) {
+            copy = new Line(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+        } else if (original instanceof Polygon polygon) {
+            copy = new Polygon();
+            ((Polygon) copy).getPoints().addAll(polygon.getPoints());
+        } else if (original instanceof Path path) {
+            copy = new Path();
+            ((Path) copy).getElements().addAll(path.getElements());
+        } else if (original instanceof Arc arc) {
+            copy = new Arc();
+            ((Arc) copy).setCenterX(arc.getCenterX());
+            ((Arc) copy).setCenterY(arc.getCenterY());
+            ((Arc) copy).setRadiusX(arc.getRadiusX());
+            ((Arc) copy).setRadiusY(arc.getRadiusY());
+            ((Arc) copy).setStartAngle(arc.getStartAngle());
+            ((Arc) copy).setLength(arc.getLength());
+            ((Arc) copy).setType(arc.getType());
+        }
+
+        if (copy != null) {
+            // Copier les styles visuels de l'original
+            //copy.setStroke(original.getStroke());
+        	if ((original instanceof Line line))
+            {
+            	copy.setStroke(colorSelection );
+            	copy.setStrokeWidth(original.getStrokeWidth()*2);
+            }
+            copy.setFill(original.getFill());
+        }
+      
+        return copy;
+    }
 
     /**
      * Censé centre la scene a l'origine. Mais ne fonctionne que lorsque l'on crée la scene. Si on zoom ou qu'on translate alors ca déconne!!!!

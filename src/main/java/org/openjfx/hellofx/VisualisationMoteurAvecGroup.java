@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -23,6 +24,7 @@ import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -110,10 +112,12 @@ public class VisualisationMoteurAvecGroup extends Application {
     	primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
         primaryStage.setScene(scene);
         primaryStage.show();
+        
+       // ScenicView.show(scene); 
 
     }
 
-	public Scene createScene() {
+    public Scene createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
@@ -198,18 +202,22 @@ public class VisualisationMoteurAvecGroup extends Application {
 		   }
 	}
 
+	Group groupeRectangle;
 	/**
 	 * Crée les objets a dessiner dans la scene
 	 */
 	private void initializeObjectsToDraw() {
 		 // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
-        Group groupeRectangle = new Group();
+		groupeRectangle = new Group();
         //groupeRectangle.setTranslateX(300);
         Transform e = Transform.translate(-450, -450);
         groupeRectangle.getTransforms().add(new Rotate(45));
         groupeRectangle.getTransforms().add(e);
         Random rand = new Random();
         int cpt = 0;
+        
+        
+        
      	// Ajouter des rectangles dans l'espace monde
         for (int i = 0; i < model.length; i++) {
             for (int j = 0; j < model[i].length; j++) {
@@ -226,6 +234,8 @@ public class VisualisationMoteurAvecGroup extends Application {
                flotteurAll.setTranslateY(flotteur.getY());
                flotteurAll.setRotate(flotteur.getRotation());
     			
+              
+               
      			// Ordinateur en PLS si activé.
     			/*
     	        RotateTransition transition2 = new RotateTransition(Duration.seconds(15), flotteurAll);
@@ -303,10 +313,32 @@ public class VisualisationMoteurAvecGroup extends Application {
     		    addShapeToSelectable(rect2, flotteur);
     		    addShapeToSelectable(rect, flotteur);
     		    //addShapeToSelectable(flotteurAll, flotteur);
-    		    
+    		    /*
+                TextField tf = new TextField();
+                tf.setText("Y/N");
+                flotteurAll.getChildren().add(tf);
+                */
     		    
     		}
         }
+        
+        // Affiche une fleche sur le groupe entier.
+        double w = groupeRectangle.getBoundsInLocal().getWidth();
+        Group arrow = createArrow(0, -100, w, -100, 3, "700");
+        
+        for (Iterator<Node> iterator = arrow.getChildren().iterator(); iterator.hasNext();) {
+			Node flotteur2 = iterator.next();
+			flotteur2.setStyle(""
+	        		+ "-fx-stroke: green;"
+	        		+ "-fx-stroke-width: 2px;"
+	        		+ "");
+		}
+
+        
+        groupeRectangle.getChildren().add(arrow);
+        
+        // Affiche un texte ui sur le groupe entier.
+        addLabelToShapeInScreenSpace("MIDDLE OF THE WORLD minus Y100", groupeRectangle, /*overlayTextGroup, drawingLayer,*/ 0, -100);
         
         
         addNodeToScene(groupeRectangle);
@@ -443,6 +475,16 @@ public class VisualisationMoteurAvecGroup extends Application {
 			System.out.println("GC()");
 			System.gc();
 		}
+		
+		if (event.getCode() == KeyCode.O) {
+			groupeRectangle.setRotate(groupeRectangle.getRotate()+1);
+
+		}
+		if (event.getCode() == KeyCode.P) {
+			groupeRectangle.setRotate(groupeRectangle.getRotate()-1);
+
+		}
+		
 		
 		
 	}
@@ -699,7 +741,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * @param offsetX offset par rapport a point 0, 0 de la shape
 	 * @param offsetY offset par rapport a point 0, 0 de la shape
 	 */
-	public void addLabelToShapeInScreenSpace(String text, Shape shape, double offsetX, double offsetY) {
+	public void addLabelToShapeInScreenSpace(String text, Node shape, double offsetX, double offsetY) {
 		Text label = new Text(text);
         // Définir la couleur et le style
         label.setFill(Color.BLACK);
@@ -715,7 +757,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	 * @param offsetX offset par rapport a point 0, 0 de la shape
 	 * @param offsetY offset par rapport a point 0, 0 de la shape
 	 */
-	public void addLabelToShapeInScreenSpace(Text label, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
+	public void addLabelToShapeInScreenSpace(Text label, Node shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
 		label.setUserData(shape); // Associer la Shape au label pour un accès ultérieur
 		label.getProperties().put("X", offsetX);
@@ -797,6 +839,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
         // On triche un peu a cause du stroke sinon on voit un morceau de la ligne rectangulaire a la point des fleches
         // Scale the line's points towards the center
+        // TODO : Plus la fleche est grande, plus le reduction factor est influencé. C'est pas bon.
         double reductionFactor = 0.99;
         double startX_ = centerX + (startX - centerX) * reductionFactor;
         double startY_ = centerY + (startY - centerY) * reductionFactor;
@@ -808,24 +851,24 @@ public class VisualisationMoteurAvecGroup extends Application {
         line.setFill(Color.BLACK);
         line.setStrokeLineJoin(StrokeLineJoin.MITER);
         line.setStroke(Color.BLACK);
-        line.setStrokeWidth(0.2);
+        line.setStrokeWidth(0.5);
 
         // Calcul de l'angle de la ligne
         double angle = Math.atan2(endY - startY, endX - startX);
 
         // Triangle de départ
         Polygon startTriangle = createTriangle(startX, startY, angle + Math.PI, arrowSize);
-        startTriangle.setFill(Color.RED);
+        startTriangle.setFill(Color.BLACK);
         //startTriangle.setStroke(Color.BLUE);
         //startTriangle.setStrokeWidth(0.1);
         
         // Triangle de fin
         Polygon endTriangle = createTriangle(endX, endY, angle, arrowSize);
-        endTriangle.setFill(Color.RED);
+        endTriangle.setFill(Color.BLACK);
         //endTriangle.setStroke(Color.BLUE);
         //endTriangle.setStrokeWidth(0.1);
 
-        addLabelToShapeInScreenSpace("L.", line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
+        addLabelToShapeInScreenSpace(textValue, line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
         
         // Ajouter les éléments au groupe
         arrowGroup.getChildren().addAll(line, startTriangle, endTriangle);
@@ -872,9 +915,7 @@ public class VisualisationMoteurAvecGroup extends Application {
     }
 
 
-    public static void main(String[] args) {
-        launch(args);
-    }
+    
     
     
     private void moveSelectedFlotteursRandomly() {
@@ -938,7 +979,7 @@ public class VisualisationMoteurAvecGroup extends Application {
     private void updateAllLabels() {
         for (Node node : overlayTextGroup.getChildren()) {
             if (node instanceof Text label) {
-                Shape associatedShape = (Shape) label.getUserData(); // Récupérer la Shape associée
+            	Node associatedShape = (Node) label.getUserData(); // Récupérer la Shape associée
                 if (associatedShape != null) {
                 	double offsetX = (Double)label.getProperties().get("X");
                 	double offsetY = (Double)label.getProperties().get("Y");
@@ -950,7 +991,9 @@ public class VisualisationMoteurAvecGroup extends Application {
         }
     }
     
-
+    public static void main(String[] args) {
+        launch(args);
+    }
 
    
 }

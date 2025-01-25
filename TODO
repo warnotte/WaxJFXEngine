@@ -2,4 +2,9 @@ DEFI 2 :
 
 Faire un modele ou on place des rectangles dans le monde 
 	- Je veux bouger les elements a la souris (donc changer les position de l'objet metier par du shape).
-	- Je veux avoir "une fenetre" pour editer la position des elements et voire le changement a l'écran. 
+	- Je veux avoir "une fenetre" pour editer la position des elements et voire le changement a l'écran.
+	
+	
+- Pourquoi recalculer X Y des label alors que les update d'event devrait etre fait quand on zoom/dezoom?
+	-> les label doivent ils etre vraiment dans l'espace ecran et pas dans le monde avec juste un update pour le zoom ?
+ 

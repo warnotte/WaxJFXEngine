@@ -112,7 +112,7 @@ public class VisualisationMoteurAvecGroup_BUTAVECADDLABELTOSHAPE extends Applica
 				flotteurAll.setTranslateY(i * 100);
 				flotteurAll.setRotate((j + i) * 10);
 
-				Flotteur flotteur = new Flotteur("Flotteur " + j + "_" + i);
+				Flotteur flotteur = new Flotteur("Flotteur " + j + "_" + i, 0, 0, 0);
 
 				Shape rect = new Rectangle(-30, -20, 60, 40);
 				// TODO : Ceci e fonctione pas a partir du moment ou on appelle addLabelToShape

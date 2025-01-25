@@ -3,6 +3,20 @@
 	-fx-stroke: magenta;
 }
 
+
+.uiContainerTopLeft {
+	-fx-background-color: rgba(255, 255, 255, 0.9);
+	-fx-padding: 10px;
+	-fx-border-color: black;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+	-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 0, 5);
+	-fx-font-size: 10px;
+}
+
+.uiContainerTopLeft:hover {
+	
+}
 /* 
 // Remove all that shit 
 */
@@ -15,16 +29,20 @@
 .button:hover { 
     -fx-opacity: 1.0; 
 } 
+
 .rectangle { 
-    transition: -fx-scale-x 1s; 
+    transition: -fx-scale-x 1s, -fx-scale-y 1s;
+    -fx-scale-x: 1.0; /* Sinon ca déconne quand on clique dans la forme, ca revient pas a la bonne scale */
+    -fx-scale-y: 1.0; /* Sinon ca déconne quand on clique dans la forme, ca revient pas a la bonne scale */
+     
 /*    transition-property: -fx-rotate;*/ 
 /*    transition-duration: 2s;*/ 
 } 
 .rectangle:hover { 
     -fx-scale-x: 1.2;
-    -fx-scale-y: 1.2;
-    
+    -fx-scale-y: 1.2;    
 } 
+
 .circle { 
     -fx-fill: blue; 
     -fx-stroke: black; 

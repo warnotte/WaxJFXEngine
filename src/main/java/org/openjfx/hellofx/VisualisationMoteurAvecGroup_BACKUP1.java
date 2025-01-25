@@ -198,7 +198,7 @@ public class VisualisationMoteurAvecGroup_BACKUP1 extends Application {
     	        transition2.play();
     			 */
     			
-    			Flotteur flotteur = new Flotteur("Flotteur " + j+"_"+i);
+    			Flotteur flotteur = new Flotteur("Flotteur " + j+"_"+i, 0, 0, 0);
     			
     			Shape rect = new Rectangle(-30, -20, 60, 40);
     			

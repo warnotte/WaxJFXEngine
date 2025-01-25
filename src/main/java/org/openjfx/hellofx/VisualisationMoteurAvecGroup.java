@@ -12,18 +12,23 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -37,6 +42,9 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
@@ -45,13 +53,14 @@ import javafx.stage.Stage;
 
 public class VisualisationMoteurAvecGroup extends Application {
 
+	// TODO : Ces variable semble partage pour la selection et la translation ... ca me plait pas.
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
     private double startX, startY; // Origine constante pour le rectangle de sélection
 
     private double zoomFactor = 1.0;
 
-    // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
+ // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
     private final Map<Shape, Flotteur> ShapeToFlotteurMap = new WeakHashMap<>();
     // Pour retenir les shape qui on été selection a partir de leur objet metier.
     private final Map<Flotteur, List<Shape>> FlotteurToShapeMap = new WeakHashMap<>();
@@ -126,14 +135,13 @@ public class VisualisationMoteurAvecGroup extends Application {
         
         initializeObjectsToDraw();
         initalizeUiLayer();
-        
-        
+       
+        drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateAllLabels());
         drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-
-        
+       
         scene = new Scene(root, 800, 600);
         
         System.err.println(" >> " + getClass().getResource("/test.css"));
@@ -213,7 +221,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         	   
         	   //  Création du groupe de shapes associé au Flotteur
                Group flotteurAll = new Group();
-               flotteurAll.setId(flotteur.getName());
+               //flotteurAll.setId(flotteur.getName());
                flotteurAll.setTranslateX(flotteur.getX());
                flotteurAll.setTranslateY(flotteur.getY());
                flotteurAll.setRotate(flotteur.getRotation());
@@ -254,7 +262,6 @@ public class VisualisationMoteurAvecGroup extends Application {
     					+ "    -fx-background-color: #383838;"
     					+ "    -fx-scale-y: 1.1;"
     					+ "}");*/
-    			
     			
     			flotteurAll.getChildren().add(rect);
     			flotteurAll.getChildren().add(rect2);
@@ -309,7 +316,37 @@ public class VisualisationMoteurAvecGroup extends Application {
         centeroftheworld.setFill(Color.RED);
        // drawingGroup.getChildren().add(centeroftheworld);
         addNodeToScene(centeroftheworld);
-        
+
+
+	}
+	
+	public void doDummyDialog()
+	{
+	   Dialog<String> dialog = new Dialog<String>();
+	      //Setting the title
+	      dialog.setTitle("Dialog");
+	      ButtonType type = new ButtonType("Ok", ButtonData.OK_DONE);
+	      //Setting the content of the dialog
+	      dialog.setContentText("What did i told you Robert!");
+	      //Adding buttons to the dialog pane
+	      dialog.getDialogPane().getButtonTypes().add(type);
+	      //Setting the label
+	      Text txt = new Text("Click the button to show the dialog");
+	      Font font = Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 12);
+	      txt.setFont(font);
+	      //Creating a button
+	      Button button = new Button("Show Dialog");
+	      //Showing the dialog on clicking the button
+	      button.setOnAction(e -> {
+	         dialog.showAndWait();
+	      });
+	      //Creating a vbox to hold the button and the label
+	      HBox pane = new HBox(15);
+	      //Setting the space between the nodes of a HBox pane
+	      pane.setPadding(new Insets(50, 150, 50, 60));
+	      pane.getChildren().addAll(txt, button);
+	      
+	      dialog.show();
 	}
 	
 	// Méthode utilitaire pour créer différentes formes
@@ -350,20 +387,22 @@ public class VisualisationMoteurAvecGroup extends Application {
      
         VBox labelContainer = new VBox();
         labelContainer.setSpacing(5); // Espacement entre les labels
-        labelContainer.setStyle(""
+        labelContainer.getStyleClass().add("uiContainerTopLeft");
+     /*   labelContainer.setStyle(""
         		+ "-fx-background-color: rgba(255, 255, 255, 0.8);"
         		+ "-fx-padding: 10px;"
         		+ "-fx-border-color: black;"
         	    + "-fx-background-radius: 10px;"
         	    + "-fx-border-radius: 10px;"
         		+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 0, 5);"
-        		+ "-fx-font-size: 10px;");
+        		+ "-fx-font-size: 10px;");*/
         labelContainer.setLayoutX(10);
         labelContainer.setLayoutY(10); // Position globale du conteneur
         
-        Button button = new Button("Salut");
+        Button button = new Button("Do not click ! :)");
         button.setOnMouseClicked(e -> {
         	System.err.println("Click on button on uilayer");
+        	doDummyDialog();
         });
         
         labelContainer.getChildren().add(selectionCountLabel);
@@ -400,6 +439,12 @@ public class VisualisationMoteurAvecGroup extends Application {
 			System.out.println("Touche G appuyée.");
 			moveSelectedFlotteursRandomly();
 		}
+		if (event.getCode() == KeyCode.C) {
+			System.out.println("GC()");
+			System.gc();
+		}
+		
+		
 	}
 
 	/**
@@ -673,13 +718,14 @@ public class VisualisationMoteurAvecGroup extends Application {
 	public void addLabelToShapeInScreenSpace(Text label, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
 		label.setUserData(shape); // Associer la Shape au label pour un accès ultérieur
-		  
+		label.getProperties().put("X", offsetX);
+		label.getProperties().put("Y", offsetY);
 		// Ajouter le label au groupe overlay
         overlayTextGroup.getChildren().add(label);
 
         // Méthode pour mettre à jour dynamiquement la position du texte
         Runnable updateLabelPosition = () -> {
-        	// Obtenir les limites transformées (bounding box en coordonnées globales)
+          	// Obtenir les limites transformées (bounding box en coordonnées globales)
         	Point2D bounds = shape.localToScene(new Point2D(offsetX, offsetY));
             // Calculer la position cible avec des offsets
             double targetX = bounds.getX();
@@ -687,6 +733,15 @@ public class VisualisationMoteurAvecGroup extends Application {
             // Centrer le texte par rapport à la position cible
             label.setX(targetX - label.getBoundsInLocal().getWidth() / 2);
             label.setY(targetY + label.getBoundsInLocal().getHeight() / 4); // Ajustement vertical pour le centrage
+        /*
+          	// Obtenir les limites transformées (bounding box en coordonnées globales)
+        	Point2D bounds = shape.localToScene(Point2D.ZERO);
+
+            // Centrer le texte par rapport à la position cible
+        	   label.setX(bounds.getX() - label.getBoundsInLocal().getWidth() / 2 + offsetX);
+        	    label.setY(bounds.getY() + label.getBoundsInLocal().getHeight() / 4 + offsetY);
+ */
+        
         };
 
         // Listener sur les transformations globales et locales
@@ -694,7 +749,7 @@ public class VisualisationMoteurAvecGroup extends Application {
         // Si la shape subit une transformation on update la position des textes
         shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-        /*
+ /*       
         // Si on zoom, ou qu'on translate a lors on doit déplacer les label de l'espace ecran
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
@@ -840,8 +895,11 @@ public class VisualisationMoteurAvecGroup extends Application {
         reinitializeScene();
     }
     
+    /**
+     * Demande de reconstruire la scène quand on a ajouter ou supprime ou modifier des objets metiers.
+     */
     private void reinitializeScene() {
-    	
+    	// TODO : ce truc va surement faire une mémory leak a cause des listener de drawingLayer.layoutBoundsProperty() et compagnie.
     	Set<Flotteur> tempSelectedFlotteurs = new HashSet<>();
         // Sauvegarder les Flotteurs sélectionnés
         tempSelectedFlotteurs.clear();
@@ -873,13 +931,18 @@ public class VisualisationMoteurAvecGroup extends Application {
         System.out.println("La scène a été réinitialisée.");
     }
     
-    
+    /**
+     * Mets a jour la position des label dans l'espace ecran de la couche overlayTextGroup quand on fait une translation
+     * un zoom, ou que l'on reinitialize la scène.
+     */
     private void updateAllLabels() {
         for (Node node : overlayTextGroup.getChildren()) {
             if (node instanceof Text label) {
                 Shape associatedShape = (Shape) label.getUserData(); // Récupérer la Shape associée
                 if (associatedShape != null) {
-                    Point2D bounds = associatedShape.localToScene(Point2D.ZERO);
+                	double offsetX = (Double)label.getProperties().get("X");
+                	double offsetY = (Double)label.getProperties().get("Y");
+                    Point2D bounds = associatedShape.localToScene(new Point2D(offsetX, offsetY));
                     label.setX(bounds.getX() - label.getBoundsInLocal().getWidth() / 2);
                     label.setY(bounds.getY() + label.getBoundsInLocal().getHeight() / 4);
                 }

@@ -8,3 +8,5 @@ Faire un modele ou on place des rectangles dans le monde
 - Pourquoi recalculer X Y des label alors que les update d'event devrait etre fait quand on zoom/dezoom?
 	-> les label doivent ils etre vraiment dans l'espace ecran et pas dans le monde avec juste un update pour le zoom ?
  
+ 
+ TODO : Bug quand hover et que la scale est max, et qu'on clique un peu partout sur la forme, elle ne revient pas comme avant.

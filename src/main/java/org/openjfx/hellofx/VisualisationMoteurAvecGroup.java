@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -24,14 +23,16 @@ import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -44,6 +45,7 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -62,7 +64,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
     private double zoomFactor = 1.0;
 
- // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
+    // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
     private final Map<Shape, Flotteur> ShapeToFlotteurMap = new WeakHashMap<>();
     // Pour retenir les shape qui on été selection a partir de leur objet metier.
     private final Map<Flotteur, List<Shape>> FlotteurToShapeMap = new WeakHashMap<>();
@@ -108,8 +110,42 @@ public class VisualisationMoteurAvecGroup extends Application {
     @Override
     public void start(Stage primaryStage) {
         
-    	Scene scene = createScene();
-    	primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
+    	
+    	Pane root = createScene();
+       
+        //root.setMaxSize(640,480);
+        
+        HBox bottom = new HBox();
+        VBox right = new VBox();
+        
+        Pane paneR = new Pane(right);
+        paneR.setBackground(Background.fill(Color.BLUE));
+        
+        bottom.getChildren().add(new Button("TOTO"));
+        bottom.getChildren().add(new Button("TOTO2"));
+        
+        right.getChildren().add(new Button("RTOTO"));
+        right.getChildren().add(new Button("RTOTO2"));
+        
+        BorderPane pane = new BorderPane ();
+        pane.setCenter(root);
+        pane.setBottom(bottom);
+        pane.setRight(paneR);
+        
+        
+        
+        
+        pane.getStyleClass().add("uiContainerTopLeft");
+        
+        scene = new Scene(pane, 800, 600);
+        //scene = new Scene(root, 800, 600);
+        // Centrer la vue sur le point (0, 0)
+        
+        centerViewOnOrigin(scene);
+    	
+        
+        
+        primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
         primaryStage.setScene(scene);
         primaryStage.show();
         
@@ -117,7 +153,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
     }
 
-    public Scene createScene() {
+    public Pane createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
@@ -125,7 +161,6 @@ public class VisualisationMoteurAvecGroup extends Application {
 		overlayTextGroup.setMouseTransparent(true);
 		overlaySelectionGroup.setMouseTransparent(true);
 		
-    	
     	// Style du fond
         root.setStyle("-fx-background-color: white;");
         /*
@@ -146,44 +181,29 @@ public class VisualisationMoteurAvecGroup extends Application {
         drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
        
-        scene = new Scene(root, 800, 600);
         
-        System.err.println(" >> " + getClass().getResource("/test.css"));
+        System.err.println(" >> " + getClass().getResource("/FXWView2D.css"));
         // load and apply CSS. 
-        Optional.ofNullable(getClass().getResource("/test.css")) 
-                .map(URL::toExternalForm) 
-                .ifPresent(scene.getStylesheets()::add); 
+        Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(root.getStylesheets()::add); 
                
         // Mise à jour des coordonnées de la souris
-        scene.setOnMouseMoved(event -> onMouseMouved(event));
-            
+        root.setOnMouseMoved(event -> onMouseMouved(event));
         // Gestion de la souris au niveau du zoom avec la roulette
-        scene.setOnScroll(event -> OnScroll(event));
-   
+        root.setOnScroll(event -> OnScroll(event));
         // Gestion de la souris, translation de la scene, ainsi que systeme de selection.
-        scene.setOnMousePressed(event -> OnMousePressed(event));
-        scene.setOnMouseDragged(event -> OnMouseDragged(event));  
-        scene.setOnMouseReleased(event -> OnMouseReleased(event));
-
+        root.setOnMousePressed(event -> OnMousePressed(event));
+        root.setOnMouseDragged(event -> OnMouseDragged(event));  
+        root.setOnMouseReleased(event -> OnMouseReleased(event));
         // Gestion du clavier
-        scene.setOnKeyPressed(event -> OnKeyPressed(event));
-        scene.setOnKeyReleased(event -> OnKeyReleased(event));
+        root.setOnKeyPressed(event -> OnKeyPressed(event));
+        root.setOnKeyReleased(event -> OnKeyReleased(event));
+      
         
-        // Centrer la vue sur le point (0, 0)
-        centerViewOnOrigin(drawingLayer, scene);
         
-        // Recentre si on resize la fentre ??? Moi ca fait sauter le scroll...
-        /*
-        scene.widthProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-
-        scene.heightProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-        */
         
-		return scene;
+        
+           
+		return root;
 	}
 
 	private void createModel() {
@@ -252,6 +272,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 
              	rect.setFill(Color.BLUE);
     			rect.setStroke(Color.BLACK);
+    			// rect.setStrokeType(StrokeType.CENTERED); // Attention avec les lignes ...
     			
     			rect.setOnMouseEntered(event -> {
     				System.err.println("Entered");
@@ -266,6 +287,8 @@ public class VisualisationMoteurAvecGroup extends Application {
     			Rectangle rect2 = new Rectangle(-35, -25, 3, 3);
     			rect2.setFill(Color.GREEN);
     			rect2.setStroke(Color.BLACK);
+    			rect2.setStrokeType(StrokeType.INSIDE);
+
     			
     			rect.getStyleClass().add("rectangle"); 
     			/*rect.setStyle(":hover {"
@@ -384,7 +407,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 	// Méthode utilitaire pour créer différentes formes
 	private Shape createShapeForFlotteur(int i) {
 	    switch (i % 9) {
-	        case 0: return new Rectangle(-30, -20, 60, 40);
+	    	case 0: return new Rectangle(-30, -20, 60, 40);
 	        case 1: return new Circle(-15, -15, 30);
 	        case 2: return new Circle(0, 0, 30);
 	        case 3: return new Polygon(0, -25, 55, 25, -25, 25); // Triangle
@@ -465,7 +488,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 			CTRL = false;
 		}
 		if (event.getCode() == KeyCode.R) {
-			centerViewOnOrigin(drawingLayer, scene);
+			centerViewOnOrigin(scene);
 		}
 		if (event.getCode() == KeyCode.G) {
 			System.out.println("Touche G appuyée.");
@@ -906,7 +929,7 @@ public class VisualisationMoteurAvecGroup extends Application {
      * @param drawingLayer
      * @param scene
      */
-    private void centerViewOnOrigin(Pane drawingLayer, Scene scene) {
+    private void centerViewOnOrigin(Scene scene) {
         double centerX = scene.getWidth() / 2;
         double centerY = scene.getHeight() / 2;
 

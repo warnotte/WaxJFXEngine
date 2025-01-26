@@ -31,7 +31,7 @@
 } 
 
 .rectangle { 
-    transition: -fx-scale-x 1s, -fx-scale-y 1s;
+    transition: -fx-scale-x 1s, -fx-scale-y 1s, -fx-rotate 1s;
     -fx-scale-x: 1.0; /* Sinon ca déconne quand on clique dans la forme, ca revient pas a la bonne scale */
     -fx-scale-y: 1.0; /* Sinon ca déconne quand on clique dans la forme, ca revient pas a la bonne scale */
      
@@ -40,7 +40,7 @@
 } 
 .rectangle:hover { 
     -fx-scale-x: 1.2;
-    -fx-scale-y: 1.2;    
+    -fx-scale-y: 1.2;  
 } 
 
 .circle { 

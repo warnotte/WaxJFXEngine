@@ -11,19 +11,23 @@ import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -37,14 +41,18 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.shape.StrokeType;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
-import javafx.stage.Stage;
 
-public class VisualisationMoteurAvecGroup2 extends Application {
+public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
 
+	// TODO : Ces variable semble partage pour la selection et la translation ... ca me plait pas.
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
     private double lastX, lastY;
     private double startX, startY; // Origine constante pour le rectangle de sélection
@@ -72,14 +80,12 @@ public class VisualisationMoteurAvecGroup2 extends Application {
     // Pane racine contenant les deux calques
     private Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
     private Pane uiLayer = new Pane(); // Contient l'interface utilisateur
-    private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
+    //private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
 
     // Permet de savoir si on appuye sur SHIFT ou CTRL
 	private boolean SHIFT;
 	private boolean CTRL;
 	
-	private Paint colorSelection = Color.MAGENTA;
-    
 	// Les label que l'on retrouve en haut a gauche 
 	private Label selectionCountLabel;
 	private Label mouseCoordsLabel;
@@ -93,17 +99,20 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 	MouseButton buttonSelection = MouseButton.PRIMARY;
 	MouseButton buttonTranslation = MouseButton.MIDDLE;
 	
-    @Override
-    public void start(Stage primaryStage) {
-        
-    	Scene scene = createScene();
-    	primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+	public VisualisationMoteurAvecGroup_BACKUP()
+	{
+		super();
+		//drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer
+		getChildren().add(drawingLayer);
+		getChildren().add(overlayTextGroup);
+		getChildren().add(overlaySelectionGroup);
+		getChildren().add(uiLayer);
+		createScene();
+	}
+	
+    
 
-    }
-
-	public Scene createScene() {
+    private void createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
@@ -111,9 +120,8 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 		overlayTextGroup.setMouseTransparent(true);
 		overlaySelectionGroup.setMouseTransparent(true);
 		
-    	
     	// Style du fond
-        root.setStyle("-fx-background-color: white;");
+        setStyle("-fx-background-color: white;");
         /*
        RotateTransition transition = new RotateTransition(Duration.seconds(15), groupeRectangle);
         transition.setFromAngle(0);
@@ -125,45 +133,30 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         
         initializeObjectsToDraw();
         initalizeUiLayer();
+       
+        drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateAllLabels());
+        drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
+        drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
+        drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
+        drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
+       
         
-        scene = new Scene(root, 800, 600);
-        
-        System.err.println(" >> " + getClass().getResource("/test.css"));
+        System.err.println(" >> " + getClass().getResource("/FXWView2D.css"));
         // load and apply CSS. 
-        Optional.ofNullable(getClass().getResource("/test.css")) 
-                .map(URL::toExternalForm) 
-                .ifPresent(scene.getStylesheets()::add); 
+        Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(getStylesheets()::add); 
                
         // Mise à jour des coordonnées de la souris
-        scene.setOnMouseMoved(event -> onMouseMouved(event));
-            
+        setOnMouseMoved(event -> onMouseMouved(event));
         // Gestion de la souris au niveau du zoom avec la roulette
-        scene.setOnScroll(event -> OnScroll(event));
-   
+        setOnScroll(event -> OnScroll(event));
         // Gestion de la souris, translation de la scene, ainsi que systeme de selection.
-        scene.setOnMousePressed(event -> OnMousePressed(event));
-        scene.setOnMouseDragged(event -> OnMouseDragged(event));  
-        scene.setOnMouseReleased(event -> OnMouseReleased(event));
-
+        setOnMousePressed(event -> OnMousePressed(event));
+        setOnMouseDragged(event -> OnMouseDragged(event));  
+        setOnMouseReleased(event -> OnMouseReleased(event));
         // Gestion du clavier
-        scene.setOnKeyPressed(event -> OnKeyPressed(event));
-        scene.setOnKeyReleased(event -> OnKeyReleased(event));
-        
-        // Centrer la vue sur le point (0, 0)
-        centerViewOnOrigin(drawingLayer, scene);
-        
-        // Recentre si on resize la fentre ??? Moi ca fait sauter le scroll...
-        /*
-        scene.widthProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-
-        scene.heightProperty().addListener((observable, oldValue, newValue) -> {
-            centerViewOnOrigin(drawingLayer, scene);
-        });
-        */
-        
-		return scene;
+        setOnKeyPressed(event -> OnKeyPressed(event));
+        setOnKeyReleased(event -> OnKeyReleased(event));
+      		
 	}
 
 	private void createModel() {
@@ -182,18 +175,23 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 		   }
 	}
 
+	Group groupeRectangle;
+	
 	/**
 	 * Crée les objets a dessiner dans la scene
 	 */
 	private void initializeObjectsToDraw() {
 		 // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
-        Group groupeRectangle = new Group();
+		groupeRectangle = new Group();
         //groupeRectangle.setTranslateX(300);
         Transform e = Transform.translate(-450, -450);
         groupeRectangle.getTransforms().add(new Rotate(45));
         groupeRectangle.getTransforms().add(e);
         Random rand = new Random();
         int cpt = 0;
+        
+        
+        
      	// Ajouter des rectangles dans l'espace monde
         for (int i = 0; i < model.length; i++) {
             for (int j = 0; j < model[i].length; j++) {
@@ -205,11 +203,13 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         	   
         	   //  Création du groupe de shapes associé au Flotteur
                Group flotteurAll = new Group();
-               flotteurAll.setId(flotteur.getName());
+               //flotteurAll.setId(flotteur.getName());
                flotteurAll.setTranslateX(flotteur.getX());
                flotteurAll.setTranslateY(flotteur.getY());
                flotteurAll.setRotate(flotteur.getRotation());
     			
+              
+               
      			// Ordinateur en PLS si activé.
     			/*
     	        RotateTransition transition2 = new RotateTransition(Duration.seconds(15), flotteurAll);
@@ -226,6 +226,7 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 
              	rect.setFill(Color.BLUE);
     			rect.setStroke(Color.BLACK);
+    			// rect.setStrokeType(StrokeType.CENTERED); // Attention avec les lignes ...
     			
     			rect.setOnMouseEntered(event -> {
     				System.err.println("Entered");
@@ -240,13 +241,14 @@ public class VisualisationMoteurAvecGroup2 extends Application {
     			Rectangle rect2 = new Rectangle(-35, -25, 3, 3);
     			rect2.setFill(Color.GREEN);
     			rect2.setStroke(Color.BLACK);
+    			rect2.setStrokeType(StrokeType.INSIDE);
+
     			
     			rect.getStyleClass().add("rectangle"); 
     			/*rect.setStyle(":hover {"
     					+ "    -fx-background-color: #383838;"
     					+ "    -fx-scale-y: 1.1;"
     					+ "}");*/
-    			
     			
     			flotteurAll.getChildren().add(rect);
     			flotteurAll.getChildren().add(rect2);
@@ -288,10 +290,32 @@ public class VisualisationMoteurAvecGroup2 extends Application {
     		    addShapeToSelectable(rect2, flotteur);
     		    addShapeToSelectable(rect, flotteur);
     		    //addShapeToSelectable(flotteurAll, flotteur);
-    		    
+    		    /*
+                TextField tf = new TextField();
+                tf.setText("Y/N");
+                flotteurAll.getChildren().add(tf);
+                */
     		    
     		}
         }
+        
+        // Affiche une fleche sur le groupe entier.
+        double w = groupeRectangle.getBoundsInLocal().getWidth();
+        Group arrow = createArrow(0, -100, w, -100, 3, "700");
+        
+        for (Iterator<Node> iterator = arrow.getChildren().iterator(); iterator.hasNext();) {
+			Node flotteur2 = iterator.next();
+			flotteur2.setStyle(""
+	        		+ "-fx-stroke: green;"
+	        		+ "-fx-stroke-width: 2px;"
+	        		+ "");
+		}
+
+        
+        groupeRectangle.getChildren().add(arrow);
+        
+        // Affiche un texte ui sur le groupe entier.
+        addLabelToShapeInScreenSpace("MIDDLE OF THE WORLD minus Y100", groupeRectangle, /*overlayTextGroup, drawingLayer,*/ 0, -100);
         
         
         addNodeToScene(groupeRectangle);
@@ -301,13 +325,43 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         centeroftheworld.setFill(Color.RED);
        // drawingGroup.getChildren().add(centeroftheworld);
         addNodeToScene(centeroftheworld);
-        
+
+
+	}
+	
+	public void doDummyDialog()
+	{
+	   Dialog<String> dialog = new Dialog<String>();
+	      //Setting the title
+	      dialog.setTitle("Dialog");
+	      ButtonType type = new ButtonType("Ok", ButtonData.OK_DONE);
+	      //Setting the content of the dialog
+	      dialog.setContentText("What did i told you Robert!");
+	      //Adding buttons to the dialog pane
+	      dialog.getDialogPane().getButtonTypes().add(type);
+	      //Setting the label
+	      Text txt = new Text("Click the button to show the dialog");
+	      Font font = Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 12);
+	      txt.setFont(font);
+	      //Creating a button
+	      Button button = new Button("Show Dialog");
+	      //Showing the dialog on clicking the button
+	      button.setOnAction(e -> {
+	         dialog.showAndWait();
+	      });
+	      //Creating a vbox to hold the button and the label
+	      HBox pane = new HBox(15);
+	      //Setting the space between the nodes of a HBox pane
+	      pane.setPadding(new Insets(50, 150, 50, 60));
+	      pane.getChildren().addAll(txt, button);
+	      
+	      dialog.show();
 	}
 	
 	// Méthode utilitaire pour créer différentes formes
 	private Shape createShapeForFlotteur(int i) {
 	    switch (i % 9) {
-	        case 0: return new Rectangle(-30, -20, 60, 40);
+	    	case 0: return new Rectangle(-30, -20, 60, 40);
 	        case 1: return new Circle(-15, -15, 30);
 	        case 2: return new Circle(0, 0, 30);
 	        case 3: return new Polygon(0, -25, 55, 25, -25, 25); // Triangle
@@ -328,7 +382,11 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 	    }
 	}
 
-	private void addNodeToScene(Node node) {
+	/**
+	 * Ajoute un noeuds a la scene courante.
+	 * @param node
+	 */
+	public void addNodeToScene(Node node) {
 		drawingGroup.getChildren().add(node);
 	}
 
@@ -342,20 +400,22 @@ public class VisualisationMoteurAvecGroup2 extends Application {
      
         VBox labelContainer = new VBox();
         labelContainer.setSpacing(5); // Espacement entre les labels
-        labelContainer.setStyle(""
+        labelContainer.getStyleClass().add("uiContainerTopLeft");
+     /*   labelContainer.setStyle(""
         		+ "-fx-background-color: rgba(255, 255, 255, 0.8);"
         		+ "-fx-padding: 10px;"
         		+ "-fx-border-color: black;"
         	    + "-fx-background-radius: 10px;"
         	    + "-fx-border-radius: 10px;"
         		+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 0, 5);"
-        		+ "-fx-font-size: 10px;");
+        		+ "-fx-font-size: 10px;");*/
         labelContainer.setLayoutX(10);
         labelContainer.setLayoutY(10); // Position globale du conteneur
         
-        Button button = new Button("Salut");
+        Button button = new Button("Do not click ! :)");
         button.setOnMouseClicked(e -> {
         	System.err.println("Click on button on uilayer");
+        	doDummyDialog();
         });
         
         labelContainer.getChildren().add(selectionCountLabel);
@@ -386,12 +446,28 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 			CTRL = false;
 		}
 		if (event.getCode() == KeyCode.R) {
-			centerViewOnOrigin(drawingLayer, scene);
+			centerViewOnOrigin(scene);
 		}
 		if (event.getCode() == KeyCode.G) {
 			System.out.println("Touche G appuyée.");
 			moveSelectedFlotteursRandomly();
 		}
+		if (event.getCode() == KeyCode.C) {
+			System.out.println("GC()");
+			System.gc();
+		}
+		
+		if (event.getCode() == KeyCode.O) {
+			groupeRectangle.setRotate(groupeRectangle.getRotate()+1);
+
+		}
+		if (event.getCode() == KeyCode.P) {
+			groupeRectangle.setRotate(groupeRectangle.getRotate()-1);
+
+		}
+		
+		
+		
 	}
 
 	/**
@@ -457,14 +533,14 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 		
 		//if (event.getButton() == MouseButton.MIDDLE) {
 		if (event.getButton() == buttonTranslation) {
-		            lastX = event.getSceneX();
-            lastY = event.getSceneY();
+			lastX = event.getSceneX();
+		            lastY = event.getSceneY();
     		
         } else // Pour gerer le debut de selection
         //	if (event.getButton() == MouseButton.PRIMARY) {
            	if (event.getButton() == buttonSelection) {
             // Début du rectangle de sélection
-            startX = event.getX();
+           		startX = event.getX();
             startY = event.getY();
 
             if (selectionRectangle == null) {
@@ -481,7 +557,7 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 	}
 	
 	protected void OnMouseDragged(MouseEvent event) {
-				
+	
 		// Pour gerer la translation de la scène
 		//if (event.getButton() == MouseButton.MIDDLE) {
 		if (event.getButton() == buttonTranslation) {
@@ -646,7 +722,7 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 	 * @param offsetX offset par rapport a point 0, 0 de la shape
 	 * @param offsetY offset par rapport a point 0, 0 de la shape
 	 */
-	public void addLabelToShapeInScreenSpace(String text, Shape shape, double offsetX, double offsetY) {
+	public void addLabelToShapeInScreenSpace(String text, Node shape, double offsetX, double offsetY) {
 		Text label = new Text(text);
         // Définir la couleur et le style
         label.setFill(Color.BLACK);
@@ -662,14 +738,18 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 	 * @param offsetX offset par rapport a point 0, 0 de la shape
 	 * @param offsetY offset par rapport a point 0, 0 de la shape
 	 */
-	public void addLabelToShapeInScreenSpace(Text label, Shape shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
+	public void addLabelToShapeInScreenSpace(Text label, Node shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
+		label.setUserData(shape); // Associer la Shape au label pour un accès ultérieur
+		label.getProperties().put("X", offsetX); // Garde ceci en mémoire pour .updateAllLabels()
+		label.getProperties().put("Y", offsetY); // Garde ceci en mémoire pour .updateAllLabels()
+		
 		// Ajouter le label au groupe overlay
         overlayTextGroup.getChildren().add(label);
 
         // Méthode pour mettre à jour dynamiquement la position du texte
         Runnable updateLabelPosition = () -> {
-        	// Obtenir les limites transformées (bounding box en coordonnées globales)
+          	// Obtenir les limites transformées (bounding box en coordonnées globales)
         	Point2D bounds = shape.localToScene(new Point2D(offsetX, offsetY));
             // Calculer la position cible avec des offsets
             double targetX = bounds.getX();
@@ -684,16 +764,20 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         // Si la shape subit une transformation on update la position des textes
         shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-        
+ /*       
         // Si on zoom, ou qu'on translate a lors on doit déplacer les label de l'espace ecran
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.scaleYProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.translateXProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
         drawingLayer.translateYProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-
+*/
         // Forcer une première mise à jour
+  //      updateLabelPosition.run();
+        // Mise à jour initiale de la position
+        //Point2D bounds = shape.localToScene(Point2D.ZERO);
         updateLabelPosition.run();
+        
 	}
 	
        // Mise à jour des coordonnées de la souris
@@ -728,6 +812,7 @@ public class VisualisationMoteurAvecGroup2 extends Application {
 
         // On triche un peu a cause du stroke sinon on voit un morceau de la ligne rectangulaire a la point des fleches
         // Scale the line's points towards the center
+        // TODO : Plus la fleche est grande, plus le reduction factor est influencé. C'est pas bon.
         double reductionFactor = 0.99;
         double startX_ = centerX + (startX - centerX) * reductionFactor;
         double startY_ = centerY + (startY - centerY) * reductionFactor;
@@ -739,24 +824,24 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         line.setFill(Color.BLACK);
         line.setStrokeLineJoin(StrokeLineJoin.MITER);
         line.setStroke(Color.BLACK);
-        line.setStrokeWidth(0.2);
+        line.setStrokeWidth(0.5);
 
         // Calcul de l'angle de la ligne
         double angle = Math.atan2(endY - startY, endX - startX);
 
         // Triangle de départ
         Polygon startTriangle = createTriangle(startX, startY, angle + Math.PI, arrowSize);
-        startTriangle.setFill(Color.RED);
+        startTriangle.setFill(Color.BLACK);
         //startTriangle.setStroke(Color.BLUE);
         //startTriangle.setStrokeWidth(0.1);
         
         // Triangle de fin
         Polygon endTriangle = createTriangle(endX, endY, angle, arrowSize);
-        endTriangle.setFill(Color.RED);
+        endTriangle.setFill(Color.BLACK);
         //endTriangle.setStroke(Color.BLUE);
         //endTriangle.setStrokeWidth(0.1);
 
-        addLabelToShapeInScreenSpace("L.", line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
+        addLabelToShapeInScreenSpace(textValue, line,/* overlayTextGroup, drawingLayer,*/ (startX + endX) / 2, (startY + endY) / 2 - 2); 
         
         // Ajouter les éléments au groupe
         arrowGroup.getChildren().addAll(line, startTriangle, endTriangle);
@@ -794,7 +879,7 @@ public class VisualisationMoteurAvecGroup2 extends Application {
      * @param drawingLayer
      * @param scene
      */
-    private void centerViewOnOrigin(Pane drawingLayer, Scene scene) {
+    public void centerViewOnOrigin(Scene scene) {
         double centerX = scene.getWidth() / 2;
         double centerY = scene.getHeight() / 2;
 
@@ -802,11 +887,61 @@ public class VisualisationMoteurAvecGroup2 extends Application {
         drawingLayer.setTranslateY(centerY);
     }
 
+    
+    /**
+     * Demande de reconstruire la scène quand on a ajouter ou supprime ou modifier des objets metiers.
+     */
+    protected void reinitializeScene() {
+    	// TODO : ce truc va surement faire une mémory leak a cause des listener de drawingLayer.layoutBoundsProperty() et compagnie.
+    	Set<Flotteur> tempSelectedFlotteurs = new HashSet<>();
+        // Sauvegarder les Flotteurs sélectionnés
+        tempSelectedFlotteurs.clear();
+        tempSelectedFlotteurs.addAll(selectedFlotteurs);
 
-    public static void main(String[] args) {
-        launch(args);
+    	
+        // Vider le groupe de dessin
+        drawingGroup.getChildren().clear();
+        overlayTextGroup.getChildren().clear();
+        overlaySelectionGroup.getChildren().clear(); 
+        ShapeToFlotteurMap.clear();
+        FlotteurToShapeMap.clear();
+        selectedFlotteurs.clear();
+        
+        // Réinitialiser les objets à dessiner
+        initializeObjectsToDraw();
+        
+        // Restaurer la sélection
+        for (Flotteur flotteur : tempSelectedFlotteurs) {
+            addToSelection(flotteur);
+        }
+        tempSelectedFlotteurs.clear();
+        System.out.println("Sélection restaurée : " + selectedFlotteurs);
+        
+        // Mettre à jour tous les labels après la recréation
+        updateAllLabels();
+
+        // Log pour débogage
+        System.out.println("La scène a été réinitialisée.");
     }
     
+    /**
+     * Mets a jour la position des label dans l'espace ecran de la couche overlayTextGroup quand on fait une translation
+     * un zoom, ou que l'on reinitialize la scène.
+     */
+    private void updateAllLabels() {
+        for (Node node : overlayTextGroup.getChildren()) {
+            if (node instanceof Text label) {
+            	Node associatedShape = (Node) label.getUserData(); // Récupérer la Shape associée
+                if (associatedShape != null) {
+                	double offsetX = (Double)label.getProperties().get("X");
+                	double offsetY = (Double)label.getProperties().get("Y");
+                    Point2D bounds = associatedShape.localToScene(new Point2D(offsetX, offsetY));
+                    label.setX(bounds.getX() - label.getBoundsInLocal().getWidth() / 2);
+                    label.setY(bounds.getY() + label.getBoundsInLocal().getHeight() / 4);
+                }
+            }
+        }
+    }
     
     private void moveSelectedFlotteursRandomly() {
         Random random = new Random();
@@ -825,25 +960,10 @@ public class VisualisationMoteurAvecGroup2 extends Application {
      // Mettre à jour le groupe visuel correspondant
         reinitializeScene();
     }
-    
-    private void reinitializeScene() {
-        // Vider le groupe de dessin
-        drawingGroup.getChildren().clear();
-        overlayTextGroup.getChildren().clear();
-        overlaySelectionGroup.getChildren().clear(); 
-        ShapeToFlotteurMap.clear();
-        FlotteurToShapeMap.clear();
-        selectedFlotteurs.clear();
-        
-        // Réinitialiser les objets à dessiner
-        initializeObjectsToDraw();
-
-        // Log pour débogage
-        System.out.println("La scène a été réinitialisée.");
+    /*
+    public static void main(String[] args) {
+        launch(args);
     }
-    
-    
-
-
+    */
    
 }

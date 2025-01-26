@@ -30,7 +30,7 @@
 			<artifactId>javafx-fxml</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/io.github.palexdev/scenicview -->
 		<!--<dependency>
 		    <groupId>io.github.palexdev</groupId>
@@ -53,12 +53,12 @@
 			<version>2.0.0-ea+6</version>
 		</dependency>
 
-<!-- https://mvnrepository.com/artifact/com.gluonhq.attach/position -->
-<dependency>
-    <groupId>com.gluonhq.attach</groupId>
-    <artifactId>position</artifactId>
-    <version>4.0.22</version>
-</dependency>
+		<!-- https://mvnrepository.com/artifact/com.gluonhq.attach/position -->
+		<dependency>
+			<groupId>com.gluonhq.attach</groupId>
+			<artifactId>position</artifactId>
+			<version>4.0.22</version>
+		</dependency>
 
 	</dependencies>
 	<build>
@@ -87,7 +87,7 @@
 					<jlinkImageName>hello</jlinkImageName>
 					<jlinkZipName>hellozip</jlinkZipName>
 					<!--<mainClass>hellofx/org.openjfx.MainApp</mainClass>-->
-					<mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+					<mainClass>org.openjfx.hellofx.GUIStarter</mainClass>
 				</configuration>
 
 
@@ -96,14 +96,14 @@
 						<id>run</id>
 						<configuration>
 							<mainClass>
-								org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+								org.openjfx.hellofx.GUIStarter</mainClass>
 						</configuration>
 					</execution>
 					<execution>
 						<id>debug</id>
 						<configuration>
 							<mainClass>
-								org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+								org.openjfx.hellofx.GUIStarter</mainClass>
 							<options>
 								<option>
 									-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8000</option>
@@ -149,7 +149,7 @@
 				<artifactId>gluonfx-maven-plugin</artifactId>
 				<version>1.0.23</version>
 				<configuration>
-					<mainClass>org.openjfx.hellofx.VisualisationMoteurAvecGroup</mainClass>
+					<mainClass>org.openjfx.hellofx.GUIStarter</mainClass>
 					<graalvmHome>e:\graalvm-jdk-23</graalvmHome>
 					<!---<graalvmHome>c:\graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>-->
 				</configuration>

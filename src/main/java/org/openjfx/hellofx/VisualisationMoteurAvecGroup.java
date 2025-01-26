@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
@@ -28,11 +27,8 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -53,7 +49,6 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
-import javafx.stage.Stage;
 
 public class VisualisationMoteurAvecGroup extends Pane {
 
@@ -65,11 +60,11 @@ public class VisualisationMoteurAvecGroup extends Pane {
     private double zoomFactor = 1.0;
 
     // Pour retenir les objets qui on été selection a partir de leur shape dans l'espace monde.
-    private final Map<Shape, Flotteur> ShapeToFlotteurMap = new WeakHashMap<>();
+    private final Map<Shape, Object> shapeToObjectMap = new WeakHashMap<>();
     // Pour retenir les shape qui on été selection a partir de leur objet metier.
-    private final Map<Flotteur, List<Shape>> FlotteurToShapeMap = new WeakHashMap<>();
+    private final Map<Object, List<Shape>> objectToShapeMap = new WeakHashMap<>();
     
-    private final Set<Flotteur> selectedFlotteurs = new HashSet<>();
+    private final Set<Object> selectedObjects = new HashSet<>();
 
     // Pour retenir le rectangle de selection et l'afficher
     private Rectangle selectionRectangle;
@@ -91,8 +86,6 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	private boolean SHIFT;
 	private boolean CTRL;
 	
-	private Paint colorSelection = Color.MAGENTA;
-    
 	// Les label que l'on retrouve en haut a gauche 
 	private Label selectionCountLabel;
 	private Label mouseCoordsLabel;
@@ -114,7 +107,6 @@ public class VisualisationMoteurAvecGroup extends Pane {
 		getChildren().add(overlayTextGroup);
 		getChildren().add(overlaySelectionGroup);
 		getChildren().add(uiLayer);
-		
 		createScene();
 	}
 	
@@ -184,6 +176,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	}
 
 	Group groupeRectangle;
+	
 	/**
 	 * Crée les objets a dessiner dans la scene
 	 */
@@ -389,7 +382,11 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	    }
 	}
 
-	private void addNodeToScene(Node node) {
+	/**
+	 * Ajoute un noeuds a la scene courante.
+	 * @param node
+	 */
+	public void addNodeToScene(Node node) {
 		drawingGroup.getChildren().add(node);
 	}
 
@@ -616,7 +613,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			}
 
 			// selectionOverlayGroup.getChildren().clear(); // Efface les anciens indicateurs
-			ShapeToFlotteurMap.forEach((shape, flotteur) -> {
+			shapeToObjectMap.forEach((shape, flotteur) -> {
 				if (Shape.intersect(selectionShape, shape).getBoundsInLocal().getWidth() > 0) {
 					if ((CTRL == true) /*&& (selectedFlotteurs.contains(flotteur))*/) {
 						removeFromSelection(flotteur);
@@ -626,7 +623,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 				}
 			});
 
-			System.out.println("Flotteurs sélectionnés : " + selectedFlotteurs);
+			System.out.println("Flotteurs sélectionnés : " + selectedObjects);
 			overlaySelectionGroup.getChildren().remove(selectionRectangle);
 			selectionRectangle = null;
 
@@ -641,14 +638,14 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	 * @param flotteur L'objet Metier a representer
 	 */
 	public void addShapeToSelectable(Shape rect, Flotteur flotteur) {
-		ShapeToFlotteurMap.put(rect, flotteur);
+		shapeToObjectMap.put(rect, flotteur);
 		
-		List<Shape> list = FlotteurToShapeMap.get(flotteur);
+		List<Shape> list = objectToShapeMap.get(flotteur);
 		if (list==null)
 			list = new ArrayList<>();
 		list.add(rect);
 		
-		FlotteurToShapeMap.put(flotteur, list);
+		objectToShapeMap.put(flotteur, list);
 	}
 	
 	/**
@@ -656,9 +653,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	 * @param rect2
 	 */
 	public void removeShapeToSelectable(Shape rect2) {
-		Flotteur flot = ShapeToFlotteurMap.get(rect2);
-		ShapeToFlotteurMap.remove(rect2);
-		FlotteurToShapeMap.remove(flot);
+		Object flot = shapeToObjectMap.get(rect2);
+		shapeToObjectMap.remove(rect2);
+		objectToShapeMap.remove(flot);
 	}
 
 	/**
@@ -666,12 +663,12 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	 */
 	private void clearSelection() {
     	// TODO : Pourquoi pas essayer d'appeler removeFromSelection
-    	for (Iterator iterator = selectedFlotteurs.iterator(); iterator.hasNext();) {
-			Flotteur flotteur = (Flotteur) iterator.next();
+    	for (Iterator<Object> iterator = selectedObjects.iterator(); iterator.hasNext();) {
+			Object flotteur = iterator.next();
 			
 			//removeFromSelection(flotteur); -> concurrent exception
 			// Helas repetition de la méthode removeFromSelection
-			List<Shape> shapes = FlotteurToShapeMap.get(flotteur);
+			List<Shape> shapes = objectToShapeMap.get(flotteur);
 			for (int i = 0 ; i < shapes.size(); i++)
 			{
 				Shape shape = shapes.get(i);
@@ -679,16 +676,28 @@ public class VisualisationMoteurAvecGroup extends Pane {
 				//System.err.println("Remove style to "+shape.getClass()+" styles : "+shape.getStyleClass());
 			}
 		}
-    	selectedFlotteurs.clear();
+    	selectedObjects.clear();
+	}
+	
+
+	public <U> List<U> getSelectedObjects(Class<U> class1) {
+		List<U> list = new ArrayList<>();
+		for (Iterator<Object> iterator = selectedObjects.iterator(); iterator.hasNext();) {
+			Object object =  iterator.next();
+			if (class1.isInstance(object)) {
+				list.add((U) object);
+			}
+		}
+		return list;
 	}
     
 	/**
 	 * Ajouter un objet a la selection 
      * @param objet Un objet DTO metier a rajouter
 	 */
-    private void addToSelection(Flotteur objet) {
-    	selectedFlotteurs.add(objet);
-    	List<Shape> shapes = FlotteurToShapeMap.get(objet);
+    private void addToSelection(Object objet) {
+    	selectedObjects.add(objet);
+    	List<Shape> shapes = objectToShapeMap.get(objet);
 		for (int i = 0 ; i < shapes.size(); i++)
 		{
 			Shape shape = shapes.get(i);
@@ -705,9 +714,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
      * Supprime un objet de la selection
      * @param objet Un objet DTO metier a supprimer
      */
-	private void removeFromSelection(Flotteur objet) {
-		selectedFlotteurs.remove(objet);
-		List<Shape> shapes = FlotteurToShapeMap.get(objet);
+	private void removeFromSelection(Object objet) {
+		selectedObjects.remove(objet);
+		List<Shape> shapes = objectToShapeMap.get(objet);
 		for (int i = 0 ; i < shapes.size(); i++)
 		{
 			Shape shape = shapes.get(i);
@@ -890,56 +899,35 @@ public class VisualisationMoteurAvecGroup extends Pane {
         drawingLayer.setTranslateY(centerY);
     }
 
-
-    
-    
-    
-    private void moveSelectedFlotteursRandomly() {
-        Random random = new Random();
-
-        // Parcourir les objets sélectionnés
-        for (Flotteur flotteur : selectedFlotteurs) {
-            // Modifier la position du Flotteur de manière aléatoire
-            double deltaX = random.nextDouble() * 100 - 50; // Valeur entre -5 et +5
-            double deltaY = random.nextDouble() * 100 - 50;
-
-            flotteur.setX(flotteur.getX() + deltaX);
-            flotteur.setY(flotteur.getY() + deltaY);
-
-            
-        }
-     // Mettre à jour le groupe visuel correspondant
-        reinitializeScene();
-    }
     
     /**
      * Demande de reconstruire la scène quand on a ajouter ou supprime ou modifier des objets metiers.
      */
-    private void reinitializeScene() {
+    protected void reinitializeScene() {
     	// TODO : ce truc va surement faire une mémory leak a cause des listener de drawingLayer.layoutBoundsProperty() et compagnie.
-    	Set<Flotteur> tempSelectedFlotteurs = new HashSet<>();
+    	Set tempSelectedFlotteurs = new HashSet<>();
         // Sauvegarder les Flotteurs sélectionnés
         tempSelectedFlotteurs.clear();
-        tempSelectedFlotteurs.addAll(selectedFlotteurs);
+        tempSelectedFlotteurs.addAll(selectedObjects);
 
     	
         // Vider le groupe de dessin
         drawingGroup.getChildren().clear();
         overlayTextGroup.getChildren().clear();
         overlaySelectionGroup.getChildren().clear(); 
-        ShapeToFlotteurMap.clear();
-        FlotteurToShapeMap.clear();
-        selectedFlotteurs.clear();
+        shapeToObjectMap.clear();
+        objectToShapeMap.clear();
+        selectedObjects.clear();
         
         // Réinitialiser les objets à dessiner
         initializeObjectsToDraw();
         
         // Restaurer la sélection
-        for (Flotteur flotteur : tempSelectedFlotteurs) {
+        for (Object flotteur : tempSelectedFlotteurs) {
             addToSelection(flotteur);
         }
         tempSelectedFlotteurs.clear();
-        System.out.println("Sélection restaurée : " + selectedFlotteurs);
+        System.out.println("Sélection restaurée : " + selectedObjects);
         
         // Mettre à jour tous les labels après la recréation
         updateAllLabels();
@@ -966,10 +954,25 @@ public class VisualisationMoteurAvecGroup extends Pane {
             }
         }
     }
-    /*
-    public static void main(String[] args) {
-        launch(args);
+    
+    private void moveSelectedFlotteursRandomly() {
+        Random random = new Random();
+
+        // Parcourir les objets sélectionnés
+        for (Flotteur flotteur : getSelectedObjects(Flotteur.class)) {
+            // Modifier la position du Flotteur de manière aléatoire
+            double deltaX = random.nextDouble() * 100 - 50; // Valeur entre -5 et +5
+            double deltaY = random.nextDouble() * 100 - 50;
+
+            flotteur.setX(flotteur.getX() + deltaX);
+            flotteur.setY(flotteur.getY() + deltaY);
+
+            
+        }
+     // Mettre à jour le groupe visuel correspondant
+        reinitializeScene();
     }
-    */
+
+
    
 }

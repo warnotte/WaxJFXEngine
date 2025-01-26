@@ -9,7 +9,7 @@ module WaxJFXEngine {
 	requires java.logging;
 	requires javafx.base;
 	requires javafx.controls;
-	requires javafx.graphics;
+	requires transitive javafx.graphics;
 	requires javafx.swing;
 	
 }

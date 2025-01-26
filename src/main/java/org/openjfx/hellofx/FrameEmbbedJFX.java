@@ -58,8 +58,8 @@ public class FrameEmbbedJFX extends JFrame {
 		final JFXPanel fxPanel = new JFXPanel();
         // This method is invoked on the JavaFX thread
     	VisualisationMoteurAvecGroup sc = new VisualisationMoteurAvecGroup();
-    	Pane pane = sc.createScene();
-        Scene scene = new Scene(pane, 400, 300);
+    	
+        Scene scene = new Scene(sc, 400, 300);
         fxPanel.setScene(scene);
 		contentPane.add(fxPanel, BorderLayout.CENTER);
 		

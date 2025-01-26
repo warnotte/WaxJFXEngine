@@ -55,7 +55,7 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 
-public class VisualisationMoteurAvecGroup extends Application {
+public class VisualisationMoteurAvecGroup extends Pane {
 
 	// TODO : Ces variable semble partage pour la selection et la translation ... ca me plait pas.
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
@@ -85,7 +85,7 @@ public class VisualisationMoteurAvecGroup extends Application {
     // Pane racine contenant les deux calques
     private Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
     private Pane uiLayer = new Pane(); // Contient l'interface utilisateur
-    private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
+    //private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
 
     // Permet de savoir si on appuye sur SHIFT ou CTRL
 	private boolean SHIFT;
@@ -106,54 +106,21 @@ public class VisualisationMoteurAvecGroup extends Application {
 	MouseButton buttonSelection = MouseButton.PRIMARY;
 	MouseButton buttonTranslation = MouseButton.MIDDLE;
 	
+	public VisualisationMoteurAvecGroup()
+	{
+		super();
+		//drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer
+		getChildren().add(drawingLayer);
+		getChildren().add(overlayTextGroup);
+		getChildren().add(overlaySelectionGroup);
+		getChildren().add(uiLayer);
+		
+		createScene();
+	}
 	
-    @Override
-    public void start(Stage primaryStage) {
-        
-    	
-    	Pane root = createScene();
-       
-        //root.setMaxSize(640,480);
-        
-        HBox bottom = new HBox();
-        VBox right = new VBox();
-        
-        Pane paneR = new Pane(right);
-        paneR.setBackground(Background.fill(Color.BLUE));
-        
-        bottom.getChildren().add(new Button("TOTO"));
-        bottom.getChildren().add(new Button("TOTO2"));
-        
-        right.getChildren().add(new Button("RTOTO"));
-        right.getChildren().add(new Button("RTOTO2"));
-        
-        BorderPane pane = new BorderPane ();
-        pane.setCenter(root);
-        pane.setBottom(bottom);
-        pane.setRight(paneR);
-        
-        
-        
-        
-        pane.getStyleClass().add("uiContainerTopLeft");
-        
-        scene = new Scene(pane, 800, 600);
-        //scene = new Scene(root, 800, 600);
-        // Centrer la vue sur le point (0, 0)
-        
-        centerViewOnOrigin(scene);
-    	
-        
-        
-        primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-        
-       // ScenicView.show(scene); 
+    
 
-    }
-
-    public Pane createScene() {
+    private void createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
@@ -162,7 +129,7 @@ public class VisualisationMoteurAvecGroup extends Application {
 		overlaySelectionGroup.setMouseTransparent(true);
 		
     	// Style du fond
-        root.setStyle("-fx-background-color: white;");
+        setStyle("-fx-background-color: white;");
         /*
        RotateTransition transition = new RotateTransition(Duration.seconds(15), groupeRectangle);
         transition.setFromAngle(0);
@@ -184,26 +151,20 @@ public class VisualisationMoteurAvecGroup extends Application {
         
         System.err.println(" >> " + getClass().getResource("/FXWView2D.css"));
         // load and apply CSS. 
-        Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(root.getStylesheets()::add); 
+        Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(getStylesheets()::add); 
                
         // Mise à jour des coordonnées de la souris
-        root.setOnMouseMoved(event -> onMouseMouved(event));
+        setOnMouseMoved(event -> onMouseMouved(event));
         // Gestion de la souris au niveau du zoom avec la roulette
-        root.setOnScroll(event -> OnScroll(event));
+        setOnScroll(event -> OnScroll(event));
         // Gestion de la souris, translation de la scene, ainsi que systeme de selection.
-        root.setOnMousePressed(event -> OnMousePressed(event));
-        root.setOnMouseDragged(event -> OnMouseDragged(event));  
-        root.setOnMouseReleased(event -> OnMouseReleased(event));
+        setOnMousePressed(event -> OnMousePressed(event));
+        setOnMouseDragged(event -> OnMouseDragged(event));  
+        setOnMouseReleased(event -> OnMouseReleased(event));
         // Gestion du clavier
-        root.setOnKeyPressed(event -> OnKeyPressed(event));
-        root.setOnKeyReleased(event -> OnKeyReleased(event));
-      
-        
-        
-        
-        
-           
-		return root;
+        setOnKeyPressed(event -> OnKeyPressed(event));
+        setOnKeyReleased(event -> OnKeyReleased(event));
+      		
 	}
 
 	private void createModel() {
@@ -783,8 +744,9 @@ public class VisualisationMoteurAvecGroup extends Application {
 	public void addLabelToShapeInScreenSpace(Text label, Node shape, /*Group overlayTextGroup, Pane drawingLayer,*/ double offsetX, double offsetY) {
 
 		label.setUserData(shape); // Associer la Shape au label pour un accès ultérieur
-		label.getProperties().put("X", offsetX);
-		label.getProperties().put("Y", offsetY);
+		label.getProperties().put("X", offsetX); // Garde ceci en mémoire pour .updateAllLabels()
+		label.getProperties().put("Y", offsetY); // Garde ceci en mémoire pour .updateAllLabels()
+		
 		// Ajouter le label au groupe overlay
         overlayTextGroup.getChildren().add(label);
 
@@ -798,15 +760,6 @@ public class VisualisationMoteurAvecGroup extends Application {
             // Centrer le texte par rapport à la position cible
             label.setX(targetX - label.getBoundsInLocal().getWidth() / 2);
             label.setY(targetY + label.getBoundsInLocal().getHeight() / 4); // Ajustement vertical pour le centrage
-        /*
-          	// Obtenir les limites transformées (bounding box en coordonnées globales)
-        	Point2D bounds = shape.localToScene(Point2D.ZERO);
-
-            // Centrer le texte par rapport à la position cible
-        	   label.setX(bounds.getX() - label.getBoundsInLocal().getWidth() / 2 + offsetX);
-        	    label.setY(bounds.getY() + label.getBoundsInLocal().getHeight() / 4 + offsetY);
- */
-        
         };
 
         // Listener sur les transformations globales et locales
@@ -929,7 +882,7 @@ public class VisualisationMoteurAvecGroup extends Application {
      * @param drawingLayer
      * @param scene
      */
-    private void centerViewOnOrigin(Scene scene) {
+    public void centerViewOnOrigin(Scene scene) {
         double centerX = scene.getWidth() / 2;
         double centerY = scene.getHeight() / 2;
 
@@ -1013,10 +966,10 @@ public class VisualisationMoteurAvecGroup extends Application {
             }
         }
     }
-    
+    /*
     public static void main(String[] args) {
         launch(args);
     }
-
+    */
    
 }

@@ -1,9 +1,14 @@
+/**
+ * For shape selected
+ */
 .ENGINE_ShapeSelected {
 	-fx-fill: magenta;
 	-fx-stroke: magenta;
 }
 
-
+/**
+ * Pour le panneau d'affichage en haut a gauche (celui avec la position souris dans le monde et autres)
+ */
 .uiContainerTopLeft {
 	-fx-background-color: rgba(255, 255, 255, 0.9);
 	-fx-padding: 10px;
@@ -17,6 +22,22 @@
 .uiContainerTopLeft:hover {
 	
 }
+
+.grid_centralAxes {
+	-fx-stroke-width: 5.5;
+	-fx-stroke: green;
+}
+
+.grid_otherAxes {
+	-fx-stroke-width: 0.5;
+	-fx-stroke: red;
+	
+}
+
+.grid_positionTexts {
+	-fx-fill: blue;
+}
+
 /* 
 // Remove all that shit 
 */

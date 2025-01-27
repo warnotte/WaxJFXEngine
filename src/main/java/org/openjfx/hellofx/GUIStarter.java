@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 
 public class GUIStarter extends Application {
 
-    public static void main(final String[] args) {
+	public static void main(final String[] args) {
     	launch(args);
     }
 
@@ -21,7 +21,7 @@ public class GUIStarter extends Application {
     public void start(Stage primaryStage) {
         
     	VisualisationMoteurAvecGroup root = new VisualisationMoteurAvecGroup();
-       
+        
         //root.setMaxSize(640,480);
         
         HBox bottom = new HBox();
@@ -48,6 +48,7 @@ public class GUIStarter extends Application {
         // Centrer la vue sur le point (0, 0)
         
         root.centerViewOnOrigin(scene);
+        //root.scene= scene;
     	
         primaryStage.setTitle("Moteur de Visualisation avec Groupes et Calques");
         primaryStage.setScene(scene);

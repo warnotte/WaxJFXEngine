@@ -540,8 +540,8 @@ public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
         //	if (event.getButton() == MouseButton.PRIMARY) {
            	if (event.getButton() == buttonSelection) {
             // Début du rectangle de sélection
-           		startX = event.getX();
-            startY = event.getY();
+       		startX = event.getX();
+       		startY = event.getY();
 
             if (selectionRectangle == null) {
                 selectionRectangle = new Rectangle();

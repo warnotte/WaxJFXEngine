@@ -338,18 +338,18 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
     }
 
     private void initializeObjectsToDraw() {
-        Random rand = new Random();
+    	   Random rand = new Random();
 
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
-                Rectangle rect = new Rectangle(-25, -25, 50, 50);
-                rect.setTranslateX(i * 100);
-                rect.setTranslateY(j * 100);
-                rect.setFill(Color.BLUE);
-                rect.setStroke(Color.BLACK);
-                drawingGroup.getChildren().add(rect);
-            }
-        }
+           for (int i = 0; i < 100; i++) {
+               for (int j = 0; j < 100; j++) {
+                   Rectangle rect = new Rectangle(-25, -25, 50, 50);
+                   rect.setTranslateX(i * 100);
+                   rect.setTranslateY(j * 100);
+                   rect.setFill(Color.BLUE);
+                   rect.setStroke(Color.BLACK);
+                   drawingGroup.getChildren().add(rect);
+               }
+           }
     }
 /*public static void main(String[] args) {
         Application.launch(VisualisationApp.class, args);

@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class GUIStarter extends Application {
+public class GUIStarter_Test1 extends Application {
 
 	public static void main(final String[] args) {
     	launch(args);
@@ -20,7 +20,7 @@ public class GUIStarter extends Application {
     @Override
     public void start(Stage primaryStage) {
         
-    	VisualisationMoteurAvecGroup root = new VisualisationMoteurAvecGroup();
+    	WFXPanel2D root = new UserViewer_Test1();
         
         //root.setMaxSize(640,480);
         
@@ -41,7 +41,7 @@ public class GUIStarter extends Application {
         pane.setBottom(bottom);
         pane.setRight(paneR);
         
-        pane.getStyleClass().add("uiContainerTopLeft");
+      //  pane.getStyleClass().add("uiContainerTopLeft");
         
         Scene scene = new Scene(pane, 800, 600);
         //scene = new Scene(root, 800, 600);

@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class GUIStarter_DBGGRID extends Application {
+public class GUIStarter_Test2 extends Application {
 
 	public static void main(final String[] args) {
 		launch(args);
@@ -20,12 +20,12 @@ public class GUIStarter_DBGGRID extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 
-		VisualisationMoteurAvecGroup_GRID root = new VisualisationMoteurAvecGroup_GRID();
+		WFXPanel2D root = new UserViewer_Test2();
 
 		BorderPane pane = new BorderPane();
 		pane.setCenter(root);
 
-		pane.getStyleClass().add("uiContainerTopLeft");
+		//pane.getStyleClass().add("uiContainerTopLeft");
 
 		Scene scene = new Scene(pane, 800, 600);
 		// scene = new Scene(root, 800, 600);

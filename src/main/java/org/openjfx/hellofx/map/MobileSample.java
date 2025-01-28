@@ -52,7 +52,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import org.openjfx.hellofx.VisualisationMoteurAvecGroup;
+import org.openjfx.hellofx.WFXPanel2D;
 
 public class MobileSample extends Application {
 

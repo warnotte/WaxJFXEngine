@@ -7,15 +7,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import javafx.animation.Interpolator;
-import javafx.animation.RotateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -31,28 +27,21 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Arc;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Transform;
-import javafx.util.Duration;
 
-public class VisualisationMoteurAvecGroup extends Pane {
+public abstract class WFXPanel2D extends Pane {
 
 	// TODO : Ces variable semble partage pour la selection et la translation ... ca me plait pas.
 	// Pour fabrique le rectangle de selection, on note la ou l'on clique avec la souris et ou elle se trouve
@@ -76,7 +65,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
     private Group drawingGroup = new Group();
     // Calque pour l'overlay (éléments fixes comme les textes)
     private Group overlayTextGroup = new Group();
- // Calque pour l'overlay (éléments fixes comme la sélection)
+    // Calque pour l'overlay (éléments fixes comme la sélection)
     private Group overlaySelectionnRectangleGroup = new Group();
     
     // Calque pour l'overlay pour afficher un fleche de mesure.
@@ -84,7 +73,8 @@ public class VisualisationMoteurAvecGroup extends Pane {
     
     
     // Pane racine contenant les deux calques
-    private Pane drawingLayer = new Pane(drawingGroup); // Contient l'espace monde
+    // TODO : Si on utilise drawLayer directement on dirait que ca fait bugger si je rotate le modele et que j'ai zoomé.
+    private Group drawingLayer = new Group(drawingGroup); // Contient l'espace monde
     private Pane uiLayer = new Pane(); // Contient l'interface utilisateur
 
     // Permet de savoir si on appuye sur SHIFT ou CTRL
@@ -94,8 +84,6 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	// Les label que l'on retrouve en haut a gauche 
 	private Label selectionCountLabel;
 	private Label mouseCoordsLabel;
-	
-	//private Scene scene;
 	
 	Point2D mousePositionInWorld = new Point2D(0, 0);
 	Point2D mousePositionInScreen = new Point2D(0, 0);
@@ -111,10 +99,10 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	private Point2D startMeasurePoint;
 	private boolean isMeasuring = false;
 	
-	public VisualisationMoteurAvecGroup()
+	public WFXPanel2D()
 	{
 		super();
-	    //private Pane root = new Pane(drawingLayer, overlayTextGroup, overlaySelectionGroup, uiLayer);
+	    //private Pane root = new Pane(drawingGroup, overlayTextGroup, overlaySelectionGroup, uiLayer);
 		getChildren().add(gridGroup);
 		getChildren().add(drawingLayer);
 		getChildren().add(overlayTextGroup);
@@ -128,7 +116,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 
     private void createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
-    	// drawingLayer.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
+    	// drawingGroup.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
 		// Omets les évenement souris sur ces 2 calques car il masquent les evenement souris sur les evenement du "monde"
 		overlayTextGroup.setMouseTransparent(true);
@@ -146,16 +134,14 @@ public class VisualisationMoteurAvecGroup extends Pane {
         transition.play();
      */
         
-        createModel();
-	    
         initializeObjectsToDraw();
         initalizeUiLayer();
        
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {updateAllLabels(); createGrid();});
-        drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
-        drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
         drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
         drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
+        drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
+        drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> {updateAllLabels(); createGrid();});
              
         System.err.println(" >> " + getClass().getResource("/FXWView2D.css"));
         // load and apply CSS. 
@@ -304,25 +290,12 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			centerViewOnOrigin(scene);
 		}
 		*/
-		if (event.getCode() == KeyCode.G) {
-			System.out.println("Touche G appuyée.");
-			moveSelectedFlotteursRandomly();
-		}
 		if (event.getCode() == KeyCode.C) {
 			System.out.println("GC()");
 			System.gc();
 		}
+	
 		
-		if (event.getCode() == KeyCode.O) {
-			groupeRectangle.setRotate(groupeRectangle.getRotate()+1);
-			//createGrid();
-			//reinitializeScene();
-		}
-		if (event.getCode() == KeyCode.P) {
-			groupeRectangle.setRotate(groupeRectangle.getRotate()-1);
-			//createGrid();
-			//reinitializeScene();
-		}
 		if (event.getCode() == KeyCode.M) {
     		isMeasuring = false;
             overlayMeasureGroup.getChildren().clear();
@@ -717,7 +690,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
        // double worldY = drawingLayer.sceneToLocal(event.getSceneX(), event.getSceneY()).getY();
 
 		// Mise a jour de des positions de la souris.
-		mousePositionInWorld = drawingLayer.sceneToLocal(x, y);
+		mousePositionInWorld = drawingGroup.sceneToLocal(x, y);
 		mousePositionInScreen =  new Point2D(x, y);
     	
         // Mettre à jour le texte du label
@@ -893,7 +866,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
         // Mettre à jour tous les labels après la recréation
         updateAllLabels();
 
-        
+        createGrid();
         // Log pour débogage
         System.out.println("La scène a été réinitialisée.");
     }
@@ -922,15 +895,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
     private void createGrid() {
     	
         gridGroup.getChildren().clear(); // Nettoyer l'ancienne grille
-
-       /* double baseCellSize = 50; // Taille des cellules en pixels écran
-        
-        if (zoomFactor<0.2)
-        	baseCellSize = 100;
-        if (zoomFactor>2)
-        	baseCellSize = 10;
-       */
-        
+         
         // TODO : Si on dezoom fort l'espacement doit augmenter toujour avec un multiple de 50
         // Calculer la taille des cellules en fonction du zoom
         double baseCellSize = 50;
@@ -981,11 +946,11 @@ public class VisualisationMoteurAvecGroup extends Pane {
         double worldMaxY = bottomRightWorld.getY();
 
         // Affichage pour vérification
-        /*
+        
         System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
         System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
         System.out.println("Zoom : "+zoomFactor);
-        */
+        
         
         Point2D pt;
         Line line;
@@ -1042,18 +1007,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
             gridGroup.getChildren().add(label);
         }
         
-        /*
-        .grid_centralAxes {
-        	
-        }
-
-        .grid_otherAxes {
-        	
-        }
-
-        .grid_positionTexts {
-        	
-        }*/
+    
         
         /**
          * Dessine les axes au centre du monde.
@@ -1107,228 +1061,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	}
     
     
-    
+	protected abstract void initializeObjectsToDraw();
 	
-	
-	
-	
-    
-
-	private void createModel() {
-		model = new Flotteur[32][32];;
-		   for (int i = 0; i < model.length; i++) {
-	           for (int j = 0; j < model[i].length; j++) {
-	        	   
-
-	        	   // Création de l'objet métier Flotteur avec position et rotation
-	        	   double x = j * 100;
-	        	   double y = i * 100;
-	        	   double rotation = (j + i) * 10; // Exemple de rotation
-	        	   Flotteur flotteur = new Flotteur("Flotteur " + j + "_" + i, x, y, rotation);
-	        	   model[i][j]=flotteur;
-	           }
-		   }
-	}
-
-    private void moveSelectedFlotteursRandomly() {
-        Random random = new Random();
-
-        // Parcourir les objets sélectionnés
-        for (Flotteur flotteur : getSelectedObjects(Flotteur.class)) {
-            // Modifier la position du Flotteur de manière aléatoire
-            double deltaX = random.nextDouble() * 100 - 50; // Valeur entre -5 et +5
-            double deltaY = random.nextDouble() * 100 - 50;
-            flotteur.setX(flotteur.getX() + deltaX);
-            flotteur.setY(flotteur.getY() + deltaY);
-        }
-        // Mettre à jour le groupe visuel correspondant
-        reinitializeScene();
-    }
-
-
-	
-	Group groupeRectangle;
-
-	// MON MODEL
-	Flotteur [][] model = null;
-	
-	/**
-	 * Crée les objets a dessiner dans la scene
-	 */
-	private void initializeObjectsToDraw() {
-		
-	    // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
-		groupeRectangle = new Group();
-		//Transform e = Transform.translate(-450, -450);
-        Transform e = Transform.translate(-3268/2, -3163/2);
-        groupeRectangle.getTransforms().add(new Rotate(45));
-        groupeRectangle.getTransforms().add(e);
-        Random rand = new Random();
-        int cpt = 0;
-        
-     	// Ajouter des rectangles dans l'espace monde
-        for (int i = 0; i < model.length; i++) {
-            for (int j = 0; j < model[i].length; j++) {
-         	   
-
-         	   // Récuperation de l'objet metier
-         	   Flotteur flotteur = model[i][j];
-
-        	   
-        	   //  Création du groupe de shapes associé au Flotteur
-               Group flotteurAll = new Group();
-               //flotteurAll.setId(flotteur.getName());
-               flotteurAll.setTranslateX(flotteur.getX());
-               flotteurAll.setTranslateY(flotteur.getY());
-               flotteurAll.setRotate(flotteur.getRotation());
-    			
-              
-               
-     			// Ordinateur en PLS si activé.
-    			/*if (Math.random()>=0.7)
-    			{
-    	        RotateTransition transition2 = new RotateTransition(Duration.seconds(15), flotteurAll);
-    	        transition2.setFromAngle(0);
-    	        transition2.setToAngle(360);
-    	        transition2.setInterpolator(Interpolator.LINEAR);
-    	        transition2.setCycleCount(0);
-    	        transition2.play();
-    			}*/
-    			
-
-               	// Création d'une forme pour représenter visuellement le Flotteur
-               	int rnd = i%9;
-               	Shape rect = createShapeForFlotteur(rnd);
-
-             	rect.setFill(Color.BLUE);
-    			rect.setStroke(Color.BLACK);
-    			// rect.setStrokeType(StrokeType.CENTERED); // Attention avec les lignes ...
-    			
-    			rect.setOnMouseEntered(event -> {
-    			//	System.err.println("Entered");
-    			});
-    			rect.setOnMouseExited(event -> {
-    			//	System.err.println("Exited");
-    			});
-    			rect.setOnMouseClicked(event -> {
-    			//	System.err.println("Clicked");
-    			});		
-    			
-    			Rectangle rect2 = new Rectangle(-35, -25, 3, 3);
-    			rect2.setFill(Color.GREEN);
-    			rect2.setStroke(Color.BLACK);
-    			rect2.setStrokeType(StrokeType.INSIDE);
-
-    			
-    			rect.getStyleClass().add("rectangle"); 
-    			/*rect.setStyle(":hover {"
-    					+ "    -fx-background-color: #383838;"
-    					+ "    -fx-scale-y: 1.1;"
-    					+ "}");*/
-    			
-    			flotteurAll.getChildren().add(rect);
-    			flotteurAll.getChildren().add(rect2);
-    			// Ajout d'un label pour représenter le nom du Flotteur (en espace écran)
-                addLabelToShapeInScreenSpace(flotteur.getName(), rect, 0, 0);
-
-    			if (rnd == 0)
-    			{
-    				Group arrow = createArrowInWorldSpaceWithTextInScreeSpace(-30, -20-1, 30, -20-1, 3, new Text("L"));
-    				flotteurAll.getChildren().add(arrow);
-    			}
-    		    
-    			
-    			// Texte en espace ecran
-    			Text label2 = new Text("BD_"+i+""+j);
-    	        label2.setFill(Color.GREEN);
-    			addLabelToShapeInScreenSpace(label2, rect, /*overlayTextGroup, drawingLayer,*/ 30, 20);
-    			addLabelToShapeInScreenSpace("HG_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ -30, -20);
-    			addLabelToShapeInScreenSpace("CE_"+i+""+j, rect, /*overlayTextGroup, drawingLayer,*/ 0, 0);
-    		    
-    		    // Texte dans l'espace monde -> addLAbelToShapeInWordSpace... ?? :)
-    		    Text label = new Text("WXYZ");
-    		    label.setMouseTransparent(true);
-    		    label.setTextAlignment(TextAlignment.CENTER);
-    		    label.setTextOrigin(VPos.CENTER);
-    		    label.setStyle("-fx-text-alignment: center;");
-    		    label.setX(-label.getBoundsInLocal().getWidth()/2);
-    		    
-    		    flotteurAll.getChildren().add(label);
-    		    
-    		    //flotteurAll.getStyleClass().add("rectangle");
-    		    // Debug
-    		    //rect2.getStyleClass().add("rectangle");
-    		    //rect.getStyleClass().add("rectangle");
-    		    
-    		    groupeRectangle.getChildren().add(flotteurAll);
-    			
-    		    // Ajoute cette shape associer a l'objet metier dans la map des objets selectionnables.
-    		    addShapeToSelectable(rect2, flotteur);
-    		    addShapeToSelectable(rect, flotteur);
-    		    //addShapeToSelectable(flotteurAll, flotteur);
-    		    /*
-                TextField tf = new TextField();
-                tf.setText("Y/N");
-                flotteurAll.getChildren().add(tf);
-                */
-    		    
-    		}
-        }
-        
-        // Affiche une fleche sur le groupe entier.
-        double w = groupeRectangle.getBoundsInLocal().getWidth();
-        double h = groupeRectangle.getBoundsInLocal().getHeight();
-        Group arrow = createArrowInWorldSpaceWithTextInScreeSpace(0, -100, w, -100, 3, new Text("700"));
-        
-        for (Iterator<Node> iterator = arrow.getChildren().iterator(); iterator.hasNext();) {
-			Node flotteur2 = iterator.next();
-			flotteur2.setStyle(""
-	        		+ "-fx-stroke: green;"
-	        		+ "-fx-stroke-width: 2px;"
-	        		+ "");
-		}
-
-        
-        groupeRectangle.getChildren().add(arrow);
-        
-        // Affiche un texte ui sur le groupe entier.
-        addLabelToShapeInScreenSpace("MIDDLE OF THE WORLD minus Y100", groupeRectangle, /*overlayTextGroup, drawingLayer,*/ 0, -100);
-        
-        addNodeToScene(groupeRectangle);
-        //drawingGroup.getChildren().add(groupeRectangle);           
-       
-        Circle centeroftheworld = new Circle(30) ;
-        centeroftheworld.setFill(Color.RED);
-        // drawingGroup.getChildren().add(centeroftheworld);
-        addNodeToScene(centeroftheworld);
-
-
-	}
-	
-
-	// Méthode utilitaire pour créer différentes formes
-	private Shape createShapeForFlotteur(int i) {
-	    switch (i % 9) {
-	    	case 0: return new Rectangle(-30, -20, 60, 40);
-	        case 1: return new Circle(-15, -15, 30);
-	        case 2: return new Circle(0, 0, 30);
-	        case 3: return new Polygon(0, -25, 55, 25, -25, 25); // Triangle
-	        case 4: return new Line(-5, 0, 10, 0);
-	        case 5: return new Ellipse(10, 5);
-	        case 6: return new Ellipse(-10, -5, 20, 10);
-	        case 7: {
-	            Arc arc = new Arc(0, 0, 20, 20, 0, 270);
-	            arc.setType(ArcType.ROUND);
-	            return arc;
-	        }
-	        case 8: {
-	            Arc arc = new Arc(-10, -5, 20, 10, 0, 200);
-	            arc.setType(ArcType.ROUND);
-	            return arc;
-	        }
-	        default: return new Rectangle(-30, -20, 60, 40);
-	    }
-	}
-
    
 }

@@ -627,6 +627,9 @@ public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
 			overlaySelectionGroup.getChildren().remove(selectionRectangle);
 			selectionRectangle = null;
 
+			// Mettre à jour le label
+	    	selectionCountLabel.setText("Objets sélectionnés : " + selectedFlotteurs.size());
+	    	
 			// Mettre à jour les formes dans l'espace écran -> plus necessaire avec le systeme de CSS
 			// updateSelectionOverlay();
 		}
@@ -677,6 +680,9 @@ public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
 			}
 		}
     	selectedFlotteurs.clear();
+    	
+    	// Mettre à jour le label
+    	selectionCountLabel.setText("Objets sélectionnés : " + selectedFlotteurs.size());
 	}
     
 	/**
@@ -917,9 +923,11 @@ public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
         tempSelectedFlotteurs.clear();
         System.out.println("Sélection restaurée : " + selectedFlotteurs);
         
+        
         // Mettre à jour tous les labels après la recréation
         updateAllLabels();
-
+        
+        
         // Log pour débogage
         System.out.println("La scène a été réinitialisée.");
     }
@@ -957,13 +965,9 @@ public class VisualisationMoteurAvecGroup_BACKUP extends Pane {
 
             
         }
-     // Mettre à jour le groupe visuel correspondant
+        // Mettre à jour le groupe visuel correspondant
         reinitializeScene();
     }
-    /*
-    public static void main(String[] args) {
-        launch(args);
-    }
-    */
+    
    
 }

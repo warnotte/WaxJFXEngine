@@ -131,6 +131,8 @@ public class VisualisationMoteurAvecGroup extends Pane {
         transition.play();
      */
         
+        createModel();
+	    
         initializeObjectsToDraw();
         initalizeUiLayer();
        
@@ -327,9 +329,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 		drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY * zoomFactor);
 
 		// Logs pour debug
-		System.out.println("Zoom Factor: " + zoomFactor);
-		System.out.println("Mouse Scene Position: (" + mouseSceneX + ", " + mouseSceneY + ")");
-		System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
+		//System.out.println("Zoom Factor: " + zoomFactor);
+		//System.out.println("Mouse Scene Position: (" + mouseSceneX + ", " + mouseSceneY + ")");
+		//System.out.println("TranslateX: " + drawingLayer.getTranslateX() + ", TranslateY: " + drawingLayer.getTranslateY());
 
 		/*
 		 * Zoom Factor: 0.7435517614520297 Mouse Scene Position: (426.0, 277.3333333333333) TranslateX: 246.2836903244558,
@@ -451,6 +453,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			overlaySelectionGroup.getChildren().remove(selectionRectangle);
 			selectionRectangle = null;
 
+	    	// Mettre à jour le label
+	    	selectionCountLabel.setText("Objets sélectionnés : " + selectedObjects.size());
+	    	
 			// Mettre à jour les formes dans l'espace écran -> plus necessaire avec le systeme de CSS
 			// updateSelectionOverlay();
 		}
@@ -486,6 +491,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	 * Efface tout les objets de la selection
 	 */
 	private void clearSelection() {
+		
     	// TODO : Pourquoi pas essayer d'appeler removeFromSelection
     	for (Iterator<Object> iterator = selectedObjects.iterator(); iterator.hasNext();) {
 			Object flotteur = iterator.next();
@@ -493,6 +499,13 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			//removeFromSelection(flotteur); -> concurrent exception
 			// Helas repetition de la méthode removeFromSelection
 			List<Shape> shapes = objectToShapeMap.get(flotteur);
+			
+			if (shapes==null)
+	    	{
+				System.err.println("clearSelection ("+flotteur+"): Avoid Null pointeur, c'est pas normal");
+	    		break;
+	    	}
+			
 			for (int i = 0 ; i < shapes.size(); i++)
 			{
 				Shape shape = shapes.get(i);
@@ -501,6 +514,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			}
 		}
     	selectedObjects.clear();
+    
+    	// Mettre à jour le label
+    	selectionCountLabel.setText("Objets sélectionnés : " + selectedObjects.size());
 	}
 	
 
@@ -532,6 +548,13 @@ public class VisualisationMoteurAvecGroup extends Pane {
     private void addToSelection(Object objet) {
     	selectedObjects.add(objet);
     	List<Shape> shapes = objectToShapeMap.get(objet);
+    	
+    	if (shapes==null)
+    	{
+    		System.err.println("ERROR : addToSelection ("+objet+"): Avoid Null pointeur, c'est pas normal");
+    		return;
+    	}
+    	
 		for (int i = 0 ; i < shapes.size(); i++)
 		{
 			Shape shape = shapes.get(i);
@@ -797,13 +820,10 @@ public class VisualisationMoteurAvecGroup extends Pane {
             // Modifier la position du Flotteur de manière aléatoire
             double deltaX = random.nextDouble() * 100 - 50; // Valeur entre -5 et +5
             double deltaY = random.nextDouble() * 100 - 50;
-
             flotteur.setX(flotteur.getX() + deltaX);
             flotteur.setY(flotteur.getY() + deltaY);
-
-            
         }
-     // Mettre à jour le groupe visuel correspondant
+        // Mettre à jour le groupe visuel correspondant
         reinitializeScene();
     }
 
@@ -998,9 +1018,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 	 */
 	private void initializeObjectsToDraw() {
 		
-	    createModel();
-	    
-		 // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
+	     // Ici je vais dessiner ma scene avec des shape et associer un objet "metier"
 		groupeRectangle = new Group();
         //groupeRectangle.setTranslateX(300);
         Transform e = Transform.translate(-450, -450);
@@ -1046,13 +1064,13 @@ public class VisualisationMoteurAvecGroup extends Pane {
     			// rect.setStrokeType(StrokeType.CENTERED); // Attention avec les lignes ...
     			
     			rect.setOnMouseEntered(event -> {
-    				System.err.println("Entered");
+    			//	System.err.println("Entered");
     			});
     			rect.setOnMouseExited(event -> {
-    				System.err.println("Exited");
+    			//	System.err.println("Exited");
     			});
     			rect.setOnMouseClicked(event -> {
-    				System.err.println("Clicked");
+    			//	System.err.println("Clicked");
     			});		
     			
     			Rectangle rect2 = new Rectangle(-35, -25, 3, 3);

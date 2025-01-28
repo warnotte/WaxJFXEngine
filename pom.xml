@@ -150,8 +150,8 @@
 				<version>1.0.23</version>
 				<configuration>
 					<mainClass>org.openjfx.hellofx.GUIStarter</mainClass>
-					<graalvmHome>e:\graalvm-jdk-23</graalvmHome>
-					<!---<graalvmHome>c:\graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>-->
+					<!--<graalvmHome>e:\graalvm-jdk-23</graalvmHome>-->
+					<graalvmHome>c:\graalvm-java23-windows-amd64-gluon-23+25.1-dev</graalvmHome>
 				</configuration>
 			</plugin>
 

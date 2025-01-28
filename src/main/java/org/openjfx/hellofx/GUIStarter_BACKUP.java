@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class GUIStarter extends Application {
+public class GUIStarter_BACKUP extends Application {
 
 	public static void main(final String[] args) {
     	launch(args);
@@ -20,7 +20,7 @@ public class GUIStarter extends Application {
     @Override
     public void start(Stage primaryStage) {
         
-    	VisualisationMoteurAvecGroup root = new VisualisationMoteurAvecGroup();
+    	VisualisationMoteurAvecGroup_BACKUP root = new VisualisationMoteurAvecGroup_BACKUP();
         
         //root.setMaxSize(640,480);
         

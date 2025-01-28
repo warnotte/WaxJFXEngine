@@ -157,7 +157,16 @@ public class VisualisationMoteurAvecGroup extends Pane {
         setOnKeyReleased(event -> OnKeyReleased(event));
 
 
-        createGrid();
+        // Attendre que la scène soit initialisée
+        sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.widthProperty().addListener((obs, oldWidth, newWidth) -> createGrid());
+                newScene.heightProperty().addListener((obs, oldHeight, newHeight) -> createGrid());
+                createGrid(); // Appeler createGrid une fois la scène disponible
+                centerViewOnOrigin();
+            }
+        });
+        
     }
     
     
@@ -716,9 +725,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
      * @param drawingLayer
      * @param scene
      */
-    public void centerViewOnOrigin(Scene scene) {
-        double centerX = scene.getWidth() / 2;
-        double centerY = scene.getHeight() / 2;
+    public void centerViewOnOrigin() {
+        double centerX = getScene().getWidth() / 2;
+        double centerY = getScene().getHeight() / 2;
 
         drawingLayer.setTranslateX(centerX);
         drawingLayer.setTranslateY(centerY);

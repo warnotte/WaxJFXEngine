@@ -72,7 +72,7 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
         super();
         getChildren().addAll(gridGroup, drawingLayer); // Ajouter la grille avant les objets
         createScene();
-        createGrid(); // Initialiser la grille
+       
     }
 
     private void createScene() {
@@ -90,7 +90,17 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
         
         // load and apply CSS. 
         Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(getStylesheets()::add); 
-
+        
+        
+        
+        // Attendre que la scène soit initialisée
+        sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.widthProperty().addListener((obs, oldWidth, newWidth) -> createGrid());
+                newScene.heightProperty().addListener((obs, oldHeight, newHeight) -> createGrid());
+                createGrid(); // Appeler createGrid une fois la scène disponible
+            }
+        });
     }
     
     private void createGrid() {
@@ -136,7 +146,10 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
 
         // Obtenir les dimensions de la scène (visible à l'écran)
         Scene scene = getScene();
-        if (scene == null) return; // Si la scène n'est pas encore initialisée
+        if (scene == null) {
+        	System.err.println("FUCK");
+        	return; // Si la scène n'est pas encore initialisée
+        }
 
         double sceneWidth = scene.getWidth();
         double sceneHeight = scene.getHeight();

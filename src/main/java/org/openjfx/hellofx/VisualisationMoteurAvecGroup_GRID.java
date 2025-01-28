@@ -84,7 +84,7 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
         setOnMouseMoved(event -> {
             double worldX = drawingLayer.sceneToLocal(event.getSceneX(), event.getSceneY()).getX();
             double worldY = drawingLayer.sceneToLocal(event.getSceneX(), event.getSceneY()).getY();
-            System.err.println("Pos : "+worldX+ ", "+worldY);
+         //   System.err.println("Pos : "+worldX+ ", "+worldY);
 
         });
         
@@ -120,6 +120,17 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
             baseCellSize = 10; // Petites cellules pour un zoom très proche
         }
         
+        double rawCellSize = 50 / zoomFactor; // Calcul initial en fonction du zoom
+        int multiple = 50; // Multiple auquel arrondir
+
+        // Arrondir au multiple le plus proche
+        baseCellSize = Math.round(rawCellSize / multiple) * multiple;
+        
+        baseCellSize = 5; // Espacement de référence à zoom = 1
+        baseCellSize = baseCellSize * Math.pow(10, -Math.floor(Math.log10(zoomFactor)));
+        
+      //  System.err.println(">> " + baseCellSize);
+        
         
         double scaledCellSize = baseCellSize * zoomFactor; // Taille ajustée dans l'espace monde
 
@@ -144,10 +155,10 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
         double worldMaxY = bottomRightWorld.getY();
 
         // Affichage pour vérification
-        System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
+   /*     System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
         System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
         System.out.println("Zoom : "+zoomFactor);
-        
+    */    
         Point2D pt;
         Line line;
         
@@ -308,6 +319,7 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
             lastX = event.getSceneX();
             lastY = event.getSceneY();
 
+            
             createGrid(); // Mettre à jour la grille
         }
     }
@@ -315,8 +327,8 @@ public class VisualisationMoteurAvecGroup_GRID extends Pane {
     private void initializeObjectsToDraw() {
         Random rand = new Random();
 
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
                 Rectangle rect = new Rectangle(-25, -25, 50, 50);
                 rect.setTranslateX(i * 100);
                 rect.setTranslateY(j * 100);

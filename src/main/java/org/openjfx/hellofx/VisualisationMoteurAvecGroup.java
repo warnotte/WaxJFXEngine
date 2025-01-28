@@ -139,14 +139,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
         drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
         drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> updateAllLabels());
-       
-        
-        drawingLayer.translateXProperty().addListener((obs, oldVal, newVal) -> drawGrid(50));
-        drawingLayer.translateYProperty().addListener((obs, oldVal, newVal) -> drawGrid(50));
-        drawingLayer.scaleXProperty().addListener((obs, oldVal, newVal) -> drawGrid(50));
-        drawingLayer.scaleYProperty().addListener((obs, oldVal, newVal) -> drawGrid(50));
-
-        
+             
         System.err.println(" >> " + getClass().getResource("/FXWView2D.css"));
         // load and apply CSS. 
         Optional.ofNullable(getClass().getResource("/FXWView2D.css")) .map(URL::toExternalForm) .ifPresent(getStylesheets()::add); 
@@ -164,7 +157,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
         setOnKeyReleased(event -> OnKeyReleased(event));
 
 
-        drawGrid(50);
+        createGrid();
     }
     
     
@@ -340,6 +333,7 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			overlayTextGroup.setVisible(false);
 		}
 
+		createGrid(); // Mettre à jour la grille
 	}
 
 	protected void OnMousePressed(MouseEvent event) 
@@ -382,6 +376,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			drawingLayer.setTranslateY(drawingLayer.getTranslateY() + deltaY);
 			lastX = event.getSceneX();
 			lastY = event.getSceneY();
+			
+			createGrid(); // Mettre à jour la grille
+			
 		} else
 			// Pour gerer le debut de selection
 		//	if (event.getButton() == MouseButton.PRIMARY && selectionRectangle != null) {
@@ -398,6 +395,9 @@ public class VisualisationMoteurAvecGroup extends Pane {
 			selectionRectangle.setY(y);
 			selectionRectangle.setWidth(width);
 			selectionRectangle.setHeight(height);
+			
+			
+			
 		}
 	}
 	
@@ -802,33 +802,157 @@ public class VisualisationMoteurAvecGroup extends Pane {
     
     
     
-    private void drawGrid(double baseSpacing) {
-        gridGroup.getChildren().clear();
+    private void createGrid() {
+    	gridGroup.setMouseTransparent(true);
+        gridGroup.getChildren().clear(); // Nettoyer l'ancienne grille
 
-        // Facteur d'espacement ajusté par le zoom
-        double adjustedSpacing = baseSpacing*drawingLayer.getScaleX() ;
+       /* double baseCellSize = 50; // Taille des cellules en pixels écran
         
-        double startX = ((drawingLayer.getTranslateX()) % adjustedSpacing);
-        double startY = ((drawingLayer.getTranslateY()) % adjustedSpacing);
+        if (zoomFactor<0.2)
+        	baseCellSize = 100;
+        if (zoomFactor>2)
+        	baseCellSize = 10;
+       */
+        
+        // TODO : Si on dezoom fort l'espacement doit augmenter toujour avec un multiple de 50
+        // Calculer la taille des cellules en fonction du zoom
+        double baseCellSize = 50;
+        if (zoomFactor < 0.2) {
+            baseCellSize = 200; // Grande taille de cellules pour un zoom très éloigné
+        } else if (zoomFactor < 0.5) {
+            baseCellSize = 100;
+        } else if (zoomFactor < 1.0) {
+            baseCellSize = 50;
+        } else if (zoomFactor < 2.0) {
+            baseCellSize = 25;
+        } else {
+            baseCellSize = 10; // Petites cellules pour un zoom très proche
+        }
+        
+        double rawCellSize = 50 / zoomFactor; // Calcul initial en fonction du zoom
+        int multiple = 50; // Multiple auquel arrondir
 
-        double endX = 500; // On determinera cela plus tard c'est la taille de la fenetre d'affichage.
-        double endY = 500; // On determinera cela plus tard c'est la taille de la fenetre d'affichage.
- 
-        // Dessiner les lignes verticales
-        for (double x = startX; x <= endX; x += adjustedSpacing) {
-            Line line = new Line(x, startY, x, endY);
-            line.setStroke(Color.LIGHTGRAY);
-            line.setStrokeWidth(0.5);
+        // Arrondir au multiple le plus proche
+        baseCellSize = Math.round(rawCellSize / multiple) * multiple;
+        
+        baseCellSize = 5; // Espacement de référence à zoom = 1
+        baseCellSize = baseCellSize * Math.pow(10, -Math.floor(Math.log10(zoomFactor)));
+        
+      //  System.err.println(">> " + baseCellSize);
+        
+        
+        double scaledCellSize = baseCellSize * zoomFactor; // Taille ajustée dans l'espace monde
+
+        // Obtenir les dimensions de la scène (visible à l'écran)
+        Scene scene = getScene();
+        if (scene == null) return; // Si la scène n'est pas encore initialisée
+
+        double sceneWidth = scene.getWidth();
+        double sceneHeight = scene.getHeight();
+        
+        // Coins visibles de la scène (en pixels écran)
+        Point2D topLeftScreen = new Point2D(0, 0); // Coin supérieur gauche
+        Point2D bottomRightScreen = new Point2D(sceneWidth, sceneHeight); // Coin inférieur droit
+        // Conversion des coordonnées écran -> monde
+        Point2D topLeftWorld = drawingLayer.sceneToLocal(topLeftScreen);
+        Point2D bottomRightWorld = drawingLayer.sceneToLocal(bottomRightScreen);
+
+        // Coordonnées min et max dans le monde
+        double worldMinX = topLeftWorld.getX();
+        double worldMinY = topLeftWorld.getY();
+        double worldMaxX = bottomRightWorld.getX();
+        double worldMaxY = bottomRightWorld.getY();
+
+        // Affichage pour vérification
+   /*     System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
+        System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
+        System.out.println("Zoom : "+zoomFactor);
+    */    
+        Point2D pt;
+        Line line;
+        
+        double offsetBorder = 20;
+        
+        /**
+         * Ce block de code sert juste a debugger pour voire si on dessine pas au dela du necessaire.
+         */
+        /*double WW = Math.abs(worldMaxX-worldMinX);
+        double HH = Math.abs(worldMaxY-worldMinY);
+        worldMinX = worldMinX + WW/10;
+        worldMaxX = worldMaxX + WW/10;
+        worldMinY = worldMinY + HH/10;
+        worldMaxY = worldMaxY + HH/10;
+        */
+        // Ajuster la boucle pour dessiner dans l'espace visible du monde
+        for (double x = Math.floor(worldMinX / baseCellSize) * baseCellSize; x <= worldMaxX; x += baseCellSize) {
+            pt = drawingLayer.localToScene(new Point2D(x, 0));
+            line = new Line(0+pt.getX(), offsetBorder, pt.getX(), sceneHeight-offsetBorder); // Lignes couvrant toute la hauteur
+            line.getStyleClass().add("grid_otherAxes");
+            //line.setStroke(Color.RED);
+            //line.setStrokeWidth(0.5); // Épaisseur constante
             gridGroup.getChildren().add(line);
+
+            // Ajouter un label indiquant la position dans le monde
+            Text label = new Text(String.format("%.0f", x)); // Formater la position (par exemple sans décimales)
+            label.getStyleClass().add("grid_positionTexts");
+            //label.setFill(Color.BLUE);
+            //label.setX(pt.getX() + 5); // Position du texte légèrement à côté de la ligne
+            label.setX(pt.getX() - label.prefWidth(-1) / 2); // Centrer horizontalement
+            label.setY(20); // Position du texte légèrement en haut de l'écran
+            gridGroup.getChildren().add(label);
         }
 
-        // Dessiner les lignes horizontales
-        for (double y = startY; y <= endY; y += adjustedSpacing) {
-            Line line = new Line(startX, y, endX, y);
-            line.setStroke(Color.LIGHTGRAY);
-            line.setStrokeWidth(0.5);
+        // Ajuster la boucle pour dessiner dans l'espace visible du monde
+        for (double y = Math.floor(worldMinY / baseCellSize) * baseCellSize; y <= worldMaxY; y += baseCellSize) {
+            pt = drawingLayer.localToScene(new Point2D(0, y));
+            line = new Line(0+offsetBorder, pt.getY(), sceneWidth-offsetBorder, pt.getY()); // Lignes couvrant toute la hauteur
+            line.getStyleClass().add("grid_otherAxes");
+            //line.setStroke(Color.RED);
+            //line.setStrokeWidth(0.5); // Épaisseur constante
             gridGroup.getChildren().add(line);
+            
+            // Ajouter un label indiquant la position dans le monde
+            Text label = new Text(String.format("%.0f", y)); // Formater la position (par exemple sans décimales)
+            label.getStyleClass().add("grid_positionTexts");
+            //label.setFill(Color.BLUE);
+            label.setTextAlignment(TextAlignment.CENTER); // Marche pas 
+            label.setX(5); // Position légèrement décalée à gauche
+            label.setY(pt.getY() + label.prefHeight(-1) /2); // Centrer verticalement sur la ligne // marche pas trop ...
+            label.setY(pt.getY());
+            gridGroup.getChildren().add(label);
         }
+        
+        /*
+        .grid_centralAxes {
+        	
+        }
+
+        .grid_otherAxes {
+        	
+        }
+
+        .grid_positionTexts {
+        	
+        }*/
+        
+        /**
+         * Dessine les axes au centre du monde.
+         */
+        pt = drawingLayer.localToScene(new Point2D(0, 0)); 
+        
+        line = new Line(pt.getX(), offsetBorder, pt.getX(), sceneHeight-offsetBorder);
+        line.getStyleClass().add("grid_centralAxes");
+        
+      //  line.setStroke(Color.GREEN);
+        // line.setStrokeWidth(5.5); // Épaisseur constante
+        gridGroup.getChildren().add(line);
+
+        line = new Line(offsetBorder, pt.getY(), sceneWidth-offsetBorder, pt.getY());
+        line.getStyleClass().add("grid_centralAxes");
+      //  line.setStroke(Color.GREEN);
+      //  line.setStrokeWidth(5.5); // Épaisseur constante
+        gridGroup.getChildren().add(line);
+
     }
 
     

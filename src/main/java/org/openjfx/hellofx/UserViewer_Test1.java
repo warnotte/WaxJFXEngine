@@ -219,9 +219,9 @@ public class UserViewer_Test1 extends WFXPanel2D {
         double h = groupeRectangle.getBoundsInLocal().getHeight();
         Group arrow = createArrowInWorldSpaceWithTextInScreeSpace(0, -100, w, -100, 3, new Text("700"));
         
-        groupeRectangle.setRotate(45);
-	    groupeRectangle.setTranslateX(-3268/2);
-        groupeRectangle.setTranslateY(-3268/2);
+        // groupeRectangle.setRotate(45);
+	    groupeRectangle.setTranslateX(-w/2);
+        groupeRectangle.setTranslateY(-h/2);
     
         
         for (Iterator<Node> iterator = arrow.getChildren().iterator(); iterator.hasNext();) {
@@ -244,7 +244,7 @@ public class UserViewer_Test1 extends WFXPanel2D {
         Circle centeroftheworld = new Circle(30) ;
         centeroftheworld.setFill(Color.RED);
         // drawingGroup.getChildren().add(centeroftheworld);
-        addNodeToScene(centeroftheworld);
+      //  addNodeToScene(centeroftheworld);
 
 
 	}

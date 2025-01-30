@@ -74,7 +74,7 @@ public abstract class WFXPanel2D extends Pane {
     
     // Pane racine contenant les deux calques
     // TODO : Si on utilise drawLayer directement on dirait que ca fait bugger si je rotate le modele et que j'ai zoomé.
-    private Group drawingLayer = new Group(drawingGroup); // Contient l'espace monde
+    private Group drawingLayer = new Group(); // Contient l'espace monde
     private Pane uiLayer = new Pane(); // Contient l'interface utilisateur
 
     // Permet de savoir si on appuye sur SHIFT ou CTRL
@@ -103,13 +103,38 @@ public abstract class WFXPanel2D extends Pane {
 	{
 		super();
 	    //private Pane root = new Pane(drawingGroup, overlayTextGroup, overlaySelectionGroup, uiLayer);
+		
+		
+		
 		getChildren().add(gridGroup);
 		getChildren().add(drawingLayer);
 		getChildren().add(overlayTextGroup);
 		getChildren().add(overlaySelectionnRectangleGroup);
 		getChildren().add(overlayMeasureGroup);
 		getChildren().add(uiLayer);
+		
+		drawingLayer.getChildren().add(drawingGroup);
+		
+		// Permet d'eviter le probleme du deplacement du monde quand rotate.
+		// Si on ne mets pas ca et qu'on rotate les telement de GUIStarter_Test1 ou GUIStarter_Test3 alors on voit que le monde se "promene"
+		Shape fakeRect1 = new Rectangle (-10000, -10000, 0, 0);
+		Shape fakeRect2 = new Rectangle ( 10000, -10000, 0, 0);
+		Shape fakeRect3 = new Rectangle (-10000,  10000, 0, 0);
+		Shape fakeRect4 = new Rectangle ( 10000,  10000, 0, 0);
+		fakeRect1.setMouseTransparent(true);
+		fakeRect2.setMouseTransparent(true);
+		fakeRect3.setMouseTransparent(true);
+		fakeRect4.setMouseTransparent(true);
+		Group fakeGroupe = new Group();
+		fakeGroupe.getChildren().add(fakeRect1);
+		fakeGroupe.getChildren().add(fakeRect2);
+		fakeGroupe.getChildren().add(fakeRect3);
+		fakeGroupe.getChildren().add(fakeRect4);
+		drawingLayer.getChildren().add(fakeGroupe);
+		
 		createScene();
+		
+		
 	}
 	
     
@@ -293,6 +318,12 @@ public abstract class WFXPanel2D extends Pane {
 		if (event.getCode() == KeyCode.C) {
 			System.out.println("GC()");
 			System.gc();
+		}
+		
+		if (event.getCode() == KeyCode.R) {
+			System.out.println("GC()");
+			zoomFactor = 1.0;
+			setZoom(1.0);
 		}
 	
 		
@@ -494,6 +525,17 @@ public abstract class WFXPanel2D extends Pane {
 			// updateSelectionOverlay();
 		}
 	}
+	
+	public double setZoom() {
+		return this.zoomFactor;
+	}
+	
+	public void setZoom(double zoomFactor) {
+		this.zoomFactor = zoomFactor;
+		drawingLayer.setScaleX(zoomFactor);
+		drawingLayer.setScaleY(zoomFactor);
+		createGrid();
+	}
 
 	/**
 	 * Ajoute une forme aux objets selectionnable et associe son objet metier
@@ -652,6 +694,9 @@ public abstract class WFXPanel2D extends Pane {
 
         // Méthode pour mettre à jour dynamiquement la position du texte
         Runnable updateLabelPosition = () -> {
+        	
+        	//System.err.println("UpdateLabelPosition() "+label);
+        	
           	// Obtenir les limites transformées (bounding box en coordonnées globales)
         	Point2D bounds = shape.localToScene(new Point2D(offsetX, offsetY));
             // Calculer la position cible avec des offsets
@@ -665,8 +710,11 @@ public abstract class WFXPanel2D extends Pane {
         // Listener sur les transformations globales et locales
         
         // Si la shape subit une transformation on update la position des textes
-        shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
-        shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
+        shape.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {updateLabelPosition.run();/*System.err.println("layoutBoundsProperty() "+label);*/});
+       // shape.localToParentTransformProperty().addListener((observable, oldValue, newValue) -> {updateLabelPosition.run();/*System.err.println("localToParentTransformProperty() "+label);*/});
+        shape.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> {updateLabelPosition.run();/*System.err.println("localToSceneTransformProperty() "+label);*/});
+        
+        
  /*       
         // Si on zoom, ou qu'on translate a lors on doit déplacer les label de l'espace ecran
         drawingLayer.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> updateLabelPosition.run());
@@ -789,7 +837,8 @@ public abstract class WFXPanel2D extends Pane {
 
         // Ajouter les éléments au groupe
         arrowGroup.getChildren().addAll(line, startTriangle, endTriangle);
-
+        //arrowGroup.getChildren().addAll(line);
+        
         return arrowGroup;
     }
     
@@ -876,6 +925,7 @@ public abstract class WFXPanel2D extends Pane {
      * un zoom, ou que l'on reinitialize la scène.
      */
     private void updateAllLabels() {
+    	System.err.println("Call updateLabel();");
         for (Node node : overlayTextGroup.getChildren()) {
             if (node instanceof Text label) {
             	Node associatedShape = (Node) label.getUserData(); // Récupérer la Shape associée
@@ -892,7 +942,7 @@ public abstract class WFXPanel2D extends Pane {
     
     
     
-    private void createGrid() {
+    public void createGrid() {
     	
         gridGroup.getChildren().clear(); // Nettoyer l'ancienne grille
          
@@ -947,10 +997,7 @@ public abstract class WFXPanel2D extends Pane {
 
         // Affichage pour vérification
         
-        System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
-        System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
-        System.out.println("Zoom : "+zoomFactor);
-        
+        debugViewPort();
         
         Point2D pt;
         Line line;
@@ -1030,6 +1077,35 @@ public abstract class WFXPanel2D extends Pane {
     }
 
     
+	public void debugViewPort() {
+		
+		Scene scene = getScene();
+        if (scene == null) return; // Si la scène n'est pas encore initialisée
+
+        double sceneWidth = scene.getWidth();
+        double sceneHeight = scene.getHeight();
+        
+        // Coins visibles de la scène (en pixels écran)
+        Point2D topLeftScreen = new Point2D(0, 0); // Coin supérieur gauche
+        Point2D bottomRightScreen = new Point2D(sceneWidth, sceneHeight); // Coin inférieur droit
+
+		Point2D topLeftWorld = drawingLayer.sceneToLocal(topLeftScreen);
+        Point2D bottomRightWorld = drawingLayer.sceneToLocal(bottomRightScreen);
+        // Coordonnées min et max dans le monde
+        double worldMinX = topLeftWorld.getX();
+        double worldMinY = topLeftWorld.getY();
+        double worldMaxX = bottomRightWorld.getX();
+        double worldMaxY = bottomRightWorld.getY();
+		
+        System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
+        System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
+        System.out.println("Zoom : "+zoomFactor);
+
+		
+	}
+
+
+
 	/**
 	 * Redessine la fleche de mesure apres un move, un drag, ou un zoom
 	 */
@@ -1054,10 +1130,13 @@ public abstract class WFXPanel2D extends Pane {
 				+ "	-fx-stroke: black;"
 				+ "	-fx-fill: black;";
 		
+		for (int i = 0 ; i < arrow.getChildren().size(); i++)
+			arrow.getChildren().get(i).setStyle(style);
+		/*
 		arrow.getChildren().get(0).setStyle(style);
 		arrow.getChildren().get(1).setStyle(style);
 		arrow.getChildren().get(2).setStyle(style);
-
+		 */
 	}
     
     

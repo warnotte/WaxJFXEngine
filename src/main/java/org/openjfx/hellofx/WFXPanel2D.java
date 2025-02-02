@@ -190,10 +190,12 @@ public abstract class WFXPanel2D extends Pane {
             if (newScene != null) {
                 newScene.widthProperty().addListener((obs, oldWidth, newWidth) -> createGrid());
                 newScene.heightProperty().addListener((obs, oldHeight, newHeight) -> createGrid());
+             
                 createGrid(); // Appeler createGrid une fois la scène disponible
                 centerViewOnOrigin();
             }
         });
+        
         
     }
     
@@ -1100,6 +1102,7 @@ public abstract class WFXPanel2D extends Pane {
         System.out.println("World MinX: " + worldMinX + ", MinY: " + worldMinY);
         System.out.println("World MaxX: " + worldMaxX + ", MaxY: " + worldMaxY);
         System.out.println("Zoom : "+zoomFactor);
+        System.out.println("Translate : "+drawingLayer.getTranslateX()+ " ; "+drawingLayer.getTranslateY());
 
 		
 	}

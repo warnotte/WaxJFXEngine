@@ -119,7 +119,7 @@ public class UserViewer_Test1 extends WFXPanel2D {
                //flotteurAll.setId(flotteur.getName());
                flotteurAll.setTranslateX(flotteur.getX());
                flotteurAll.setTranslateY(flotteur.getY());
-               //flotteurAll.setRotate(flotteur.getRotation());
+               flotteurAll.setRotate(flotteur.getRotation());
     			
               
                

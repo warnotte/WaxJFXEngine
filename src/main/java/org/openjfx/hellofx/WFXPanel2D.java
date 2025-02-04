@@ -139,7 +139,7 @@ public abstract class WFXPanel2D extends Pane {
 	
     
 
-    private void createScene() {
+    public void createScene() {
 		// Permet de mettre a jour les selection orange quand on zoom ou scroll -> Avec le systeme de CSS on plus besoin de ça
     	// drawingGroup.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> updateSelectionOverlay());
     	
@@ -544,7 +544,7 @@ public abstract class WFXPanel2D extends Pane {
 	 * @param shape La forme Shape de l'objet representé
 	 * @param flotteur L'objet Metier a representer
 	 */
-	public void addShapeToSelectable(Shape rect, Flotteur flotteur) {
+	public void addShapeToSelectable(Shape rect, Object flotteur) {
 		shapeToObjectMap.put(rect, flotteur);
 		
 		List<Shape> list = objectToShapeMap.get(flotteur);
@@ -790,7 +790,7 @@ public abstract class WFXPanel2D extends Pane {
     }
     
     /**
-     * Crée une fleche 
+     * Crée une fleche
      * @param startX
      * @param startY
      * @param endX
@@ -799,6 +799,20 @@ public abstract class WFXPanel2D extends Pane {
      * @return
      */
     public Group createArrow(double startX, double startY, double endX, double endY, double arrowSize) {
+    	return createArrow(startX, startY, endX, endY, arrowSize, true, true);
+    }
+    /**
+     * Crée une fleche 
+     * @param startX
+     * @param startY
+     * @param endX
+     * @param endY
+     * @param arrowSize
+     * @param drawArrow1 
+     * @param drawArrow2 
+     * @return
+     */
+    public Group createArrow(double startX, double startY, double endX, double endY, double arrowSize, boolean drawArrow1, boolean drawArrow2) {
         Group arrowGroup = new Group();
 
         // Ligne de la flèche
@@ -824,21 +838,26 @@ public abstract class WFXPanel2D extends Pane {
         
         // Calcul de l'angle de la ligne
         double angle = Math.atan2(endY - startY, endX - startX);
-
-        // Triangle de départ
-        Polygon startTriangle = createTriangle(startX, startY, angle + Math.PI, arrowSize);
-        startTriangle.setFill(Color.BLACK);
-        //startTriangle.setStroke(Color.BLUE);
-        //startTriangle.setStrokeWidth(0.1);
-        
-        // Triangle de fin
-        Polygon endTriangle = createTriangle(endX, endY, angle, arrowSize);
-        endTriangle.setFill(Color.BLACK);
-        //endTriangle.setStroke(Color.BLUE);
-        //endTriangle.setStrokeWidth(0.1);
-
         // Ajouter les éléments au groupe
-        arrowGroup.getChildren().addAll(line, startTriangle, endTriangle);
+        arrowGroup.getChildren().addAll(line);
+        if (drawArrow1==true)
+        {
+        	// Triangle de départ
+            Polygon startTriangle = createTriangle(startX, startY, angle + Math.PI, arrowSize);
+            startTriangle.setFill(Color.BLACK);
+            //startTriangle.setStroke(Color.BLUE);
+            //startTriangle.setStrokeWidth(0.1);
+            arrowGroup.getChildren().addAll(startTriangle);
+        }
+        if (drawArrow2==true)
+        {
+            // Triangle de fin
+            Polygon endTriangle = createTriangle(endX, endY, angle, arrowSize);
+            endTriangle.setFill(Color.BLACK);
+            //endTriangle.setStroke(Color.BLUE);
+            //endTriangle.setStrokeWidth(0.1);
+            arrowGroup.getChildren().addAll(endTriangle);
+        }
         //arrowGroup.getChildren().addAll(line);
         
         return arrowGroup;

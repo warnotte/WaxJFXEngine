@@ -9,7 +9,7 @@ Bienvenue dans le projet **Visualisation Moteur 2D**, un moteur d'affichage poly
 - Dessin et gestion de formes variées : rectangles, cercles, ellipses, polygones, arcs, etc.
 - Association d'objets "métier" à des entités graphiques.
 - Sélection multiple via un rectangle de sélection interactif.
-- Labels dynamiques attachés aux formes, suivant les transformations de la scène.
+- lLabels dynamiques attachés aux formes, suivant les transformations de la scène.
 
 ### Interactions utilisateur 🖱️
 
